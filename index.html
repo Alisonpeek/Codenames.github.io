@@ -1,0 +1,3733 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Codenames - Мультиплеер</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --blue-team: #3498db;
+            --red-team: #e74c3c;
+            --neutral: #f1f2f6;
+            --assassin: #2c3e50;
+            --background: #1a1a2e;
+            --card-bg: #162447;
+            --panel-bg: #1f4068;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--background);
+            color: #f1f1f1;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            width: 100%;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--blue-team);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            position: relative;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        h1 {
+            color: var(--blue-team);
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            margin-bottom: 0;
+            word-break: break-word;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #8f94fb;
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+            text-align: center;
+        }
+
+        .rules-btn-header {
+            position: static;
+            transform: none;
+            background: none;
+            border: none;
+            color: #8f94fb;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 10px;
+            margin-left: auto;
+            order: 2;
+        }
+
+        @media (max-width: 768px) {
+            .rules-btn-header {
+                position: absolute;
+                right: 10px;
+                top: 10px;
+                margin-left: 0;
+            }
+
+            .header-content {
+                padding-top: 10px;
+            }
+        }
+
+        .game-container {
+            display: grid;
+            grid-template-columns: 3fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex: 1;
+        }
+
+        @media (max-width: 1024px) {
+            .game-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto;
+            }
+        }
+
+        .main-game {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .main-game {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto;
+            }
+        }
+
+        .game-board {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .game-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .player-panel {
+            background-color: var(--panel-bg);
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-gap: 8px;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 1200px) {
+            .cards-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .cards-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .cards-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .card {
+            aspect-ratio: 1 / 0.8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: clamp(0.8rem, 1.5vw, 1.1rem);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 8px;
+            user-select: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            word-break: break-word;
+            position: relative;
+            overflow: hidden;
+            min-height: 60px;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .card .word {
+            z-index: 2;
+            font-size: clamp(0.75rem, 1.3vw, 1rem);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            font-weight: 600;
+        }
+
+        .card .hint-indicator {
+            position: absolute;
+            top: 3px;
+            right: 3px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            font-size: 0.6rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+        }
+
+        .card.blue-hint .hint-indicator {
+            background-color: var(--blue-team);
+            color: white;
+        }
+
+        .card.red-hint .hint-indicator {
+            background-color: var(--red-team);
+            color: white;
+        }
+
+        .card.word {
+            background-color: var(--neutral);
+            color: #333;
+        }
+
+        .card.blue {
+            background-color: var(--blue-team);
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .card.red {
+            background-color: var(--red-team);
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .card.neutral {
+            background-color: var(--neutral);
+            color: #333;
+            border: 2px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .card.assassin {
+            background-color: var(--assassin);
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .card.selected {
+            transform: scale(0.95);
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .card.disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .card.blocked {
+            pointer-events: none;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .card.master-view {
+            color: white !important;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8) !important;
+            font-weight: 600 !important;
+        }
+
+        .card.master-view.neutral {
+            color: #333 !important;
+            text-shadow: none !important;
+        }
+
+        h2 {
+            color: #8f94fb;
+            margin-bottom: 12px;
+            font-size: clamp(1.3rem, 2vw, 1.8rem);
+        }
+
+        .team-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .team {
+            text-align: center;
+            padding: 12px;
+            border-radius: 8px;
+            flex: 1;
+            min-width: 140px;
+        }
+
+        .team.blue {
+            background-color: rgba(52, 152, 219, 0.2);
+            border: 2px solid var(--blue-team);
+        }
+
+        .team.red {
+            background-color: rgba(231, 76, 60, 0.2);
+            border: 2px solid var(--red-team);
+        }
+
+        .team h3 {
+            margin-bottom: 8px;
+            font-size: clamp(1.1rem, 1.8vw, 1.5rem);
+        }
+
+        .score {
+            font-size: clamp(1.8rem, 3vw, 2.5rem);
+            font-weight: bold;
+        }
+
+        .team-players {
+            margin-top: 8px;
+            font-size: 0.8rem;
+        }
+
+        .player {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px 8px;
+            margin: 4px 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+
+        .player.master::after {
+            content: "👑";
+            margin-left: 4px;
+        }
+
+        .player.me::before {
+            content: "➤ ";
+            color: #f1c40f;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        button {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: clamp(0.9rem, 1.2vw, 1.1rem);
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        button:active:not(:disabled) {
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .new-game-btn {
+            background: linear-gradient(135deg, var(--blue-team), #2980b9);
+            color: white;
+        }
+
+        .rules-btn {
+            background: linear-gradient(135deg, #8f94fb, #4e54c8);
+            color: white;
+        }
+
+        .join-btn {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+        }
+
+        .leave-btn {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .hint-section {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.1));
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .hint-input {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        input, select {
+            padding: 12px;
+            border-radius: 8px;
+            border: 2px solid var(--blue-team);
+            background-color: rgba(255, 255, 255, 0.15);
+            color: white;
+            font-size: clamp(0.9rem, 1.2vw, 1rem);
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #8f94fb;
+            background-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 0 3px rgba(143, 148, 251, 0.3);
+        }
+
+        input::placeholder {
+            color: #aaa;
+        }
+
+        input, textarea {
+            color: white !important;
+        }
+
+        .hint-btn {
+            background: linear-gradient(135deg, var(--blue-team), #2980b9);
+            color: white;
+            padding: 12px 16px;
+            font-weight: bold;
+        }
+
+        .current-hint {
+            background: linear-gradient(135deg, rgba(143, 148, 251, 0.3), rgba(78, 84, 200, 0.2));
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 12px;
+            font-size: clamp(0.9rem, 1.2vw, 1rem);
+            border: 1px solid rgba(143, 148, 251, 0.3);
+        }
+
+        .hint-history {
+            max-height: 150px;
+            overflow-y: auto;
+            margin-top: 8px;
+        }
+
+        .hint-item {
+            padding: 8px 12px;
+            margin: 5px 0;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-left: 4px solid transparent;
+            transition: transform 0.2s;
+        }
+
+        .hint-item:hover {
+            transform: translateX(3px);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .hint-item.blue {
+            border-left-color: var(--blue-team);
+            background: linear-gradient(90deg, rgba(52, 152, 219, 0.2), transparent);
+        }
+
+        .hint-item.red {
+            border-left-color: var(--red-team);
+            background: linear-gradient(90deg, rgba(231, 76, 60, 0.2), transparent);
+        }
+
+        .timer {
+            font-size: clamp(1.5rem, 2.5vw, 2rem);
+            font-weight: bold;
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.1));
+            margin: 12px 0;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .timer.running {
+            color: #f1c40f;
+            animation: pulse 1.5s infinite;
+            border-color: rgba(241, 196, 15, 0.3);
+        }
+
+        .timer.warning {
+            color: #e74c3c;
+            border-color: rgba(231, 76, 60, 0.3);
+        }
+
+        /* Таймер для мастера */
+        .master-timer {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 8px 12px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.1));
+            margin: 10px 0;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            display: none;
+        }
+
+        .master-timer.running {
+            color: #f1c40f;
+            animation: pulse 1.5s infinite;
+            border-color: rgba(241, 196, 15, 0.3);
+        }
+
+        .master-timer.warning {
+            color: #e74c3c;
+            border-color: rgba(231, 76, 60, 0.3);
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 5px rgba(241, 196, 15, 0.5); }
+            50% { box-shadow: 0 0 15px rgba(241, 196, 15, 0.8); }
+            100% { box-shadow: 0 0 5px rgba(241, 196, 15, 0.5); }
+        }
+
+        .role-selector {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .role-btn {
+            flex: 1;
+            padding: 12px;
+            min-width: 140px;
+        }
+
+        .chat-panel {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-height: 400px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.1));
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 12px;
+            max-height: 250px;
+            min-height: 200px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            font-size: 0.9rem;
+            word-break: break-word;
+            transition: transform 0.2s;
+            border-left: 4px solid transparent;
+        }
+
+        .message:hover {
+            transform: translateX(3px);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .message.system {
+            background: linear-gradient(90deg, rgba(52, 152, 219, 0.2), transparent);
+            border-left-color: var(--blue-team);
+            font-style: italic;
+        }
+
+        .message.hint {
+            background: linear-gradient(90deg, rgba(46, 204, 113, 0.2), transparent);
+            border-left-color: #2ecc71;
+        }
+
+        .message.game-start {
+            background: linear-gradient(90deg, rgba(155, 89, 182, 0.2), transparent);
+            border-left-color: #9b59b6;
+            font-weight: bold;
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 8px;
+            margin-top: auto;
+        }
+
+        .chat-input input {
+            flex: 1;
+            min-width: 0;
+            background-color: rgba(255, 255, 255, 0.15);
+            color: white !important;
+        }
+
+        .chat-input input::placeholder {
+            color: #aaa;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            color: #8f94fb;
+            font-size: 0.8rem;
+            border-top: 1px solid rgba(143, 148, 251, 0.3);
+        }
+
+        .card-counter {
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+            border-radius: 50%;
+            text-align: center;
+            line-height: 28px;
+            margin-left: 5px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .master-view-btn {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            color: white;
+        }
+
+        .name-input-section {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .name-input-section input {
+            flex: 1;
+            padding: 12px;
+            min-width: 150px;
+            background-color: rgba(255, 255, 255, 0.15);
+            color: white !important;
+        }
+
+        .name-input-section button {
+            width: auto;
+            min-width: 100px;
+        }
+
+        .status-message {
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            text-align: center;
+            font-weight: bold;
+            font-size: clamp(0.9rem, 1.2vw, 1rem);
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.1));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .status-message.blue {
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.3), rgba(52, 152, 219, 0.1));
+            border-color: rgba(52, 152, 219, 0.3);
+            color: var(--blue-team);
+        }
+
+        .status-message.red {
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.3), rgba(231, 76, 60, 0.1));
+            border-color: rgba(231, 76, 60, 0.3);
+            color: var(--red-team);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, var(--panel-bg), #1a335a);
+            max-width: 600px;
+            width: 100%;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            animation: slideUp 0.4s ease;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-content h2 {
+            margin-top: 0;
+            color: #8f94fb;
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            min-width: 140px;
+        }
+
+        .close-modal-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: #8f94fb;
+            font-size: 1.8rem;
+            cursor: pointer;
+            width: auto;
+            padding: 5px;
+            transition: transform 0.3s;
+        }
+
+        .close-modal-btn:hover {
+            transform: rotate(90deg);
+            color: #e74c3c;
+        }
+
+        .winner-celebration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0.85));
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            flex-direction: column;
+            text-align: center;
+            padding: 20px;
+            animation: fadeIn 0.5s;
+        }
+
+        .winner-celebration.active {
+            display: flex;
+        }
+
+        .winner-text {
+            font-size: clamp(3rem, 7vw, 5rem);
+            font-weight: 900;
+            margin-bottom: 30px;
+            text-shadow: 0 5px 15px rgba(0, 0, 0, 0.7);
+            background: linear-gradient(135deg, #fff, #f1f1f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 2px;
+            animation: winnerText 1s ease infinite alternate;
+        }
+
+        @keyframes winnerText {
+            from {
+                transform: scale(1);
+                text-shadow: 0 5px 15px rgba(0, 0, 0, 0.7);
+            }
+            to {
+                transform: scale(1.05);
+                text-shadow: 0 10px 25px rgba(0, 0, 0, 0.9);
+            }
+        }
+
+        .winner-text.blue {
+            background: linear-gradient(135deg, var(--blue-team), #1a5276);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .winner-text.red {
+            background: linear-gradient(135deg, var(--red-team), #78281f);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .winner-subtext {
+            font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+            margin-bottom: 30px;
+            color: #f1f1f1;
+            max-width: 500px;
+            line-height: 1.5;
+        }
+
+        .rules-content {
+            line-height: 1.7;
+        }
+
+        .rules-content h3 {
+            color: #8f94fb;
+            margin: 20px 0 10px 0;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .rules-content p {
+            margin-bottom: 15px;
+            color: #ddd;
+        }
+
+        .rules-content ol, .rules-content ul {
+            margin-left: 20px;
+            margin-bottom: 20px;
+        }
+
+        .rules-content li {
+            margin-bottom: 8px;
+            color: #ddd;
+        }
+
+        .rules-content strong {
+            color: #8f94fb;
+        }
+
+        .color-sample {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border-radius: 3px;
+            margin-right: 8px;
+            vertical-align: middle;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .color-sample.blue {
+            background-color: var(--blue-team);
+        }
+
+        .color-sample.red {
+            background-color: var(--red-team);
+        }
+
+        .color-sample.neutral {
+            background-color: var(--neutral);
+        }
+
+        .color-sample.assassin {
+            background-color: var(--assassin);
+        }
+
+        /* Мобильная навигация */
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, var(--panel-bg), #1a335a);
+            padding: 10px;
+            z-index: 50;
+            border-top: 2px solid var(--blue-team);
+            box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Исправления для мобильного чата */
+        .mobile-chat-container {
+            position: fixed;
+            bottom: 70px;
+            left: 10px;
+            right: 10px;
+            background: var(--panel-bg);
+            padding: 15px;
+            z-index: 100;
+            border-radius: 10px;
+            border: 2px solid var(--blue-team);
+            display: none;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.3);
+            max-height: 70vh;
+            flex-direction: column;
+        }
+
+        .mobile-chat-container.active {
+            display: flex;
+        }
+
+        .mobile-chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .close-mobile-chat {
+            background: none;
+            border: none;
+            color: #8f94fb;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .mobile-chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            min-height: 150px;
+            max-height: 300px;
+        }
+
+        .mobile-chat-input {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .mobile-chat-input input {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            border: 2px solid var(--blue-team);
+            background-color: rgba(255, 255, 255, 0.15);
+            color: white !important;
+            font-size: 1rem;
+        }
+
+        .mobile-chat-input button {
+            width: auto;
+            padding: 12px 20px;
+            min-width: 60px;
+        }
+
+        .open-chat-button {
+            position: fixed;
+            bottom: 70px;
+            right: 20px;
+            background: var(--blue-team);
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            z-index: 99;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            border: none;
+            cursor: pointer;
+            display: none;
+        }
+
+        .open-chat-button.active {
+            display: flex;
+        }
+
+        .chat-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #e74c3c;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu {
+                display: flex;
+                justify-content: space-around;
+            }
+
+            .mobile-tab {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                color: white;
+                text-decoration: none;
+                padding: 8px 12px;
+                border-radius: 8px;
+                transition: all 0.3s;
+                background: rgba(255, 255, 255, 0.1);
+            }
+
+            .mobile-tab.active {
+                background: linear-gradient(135deg, var(--blue-team), #2980b9);
+                transform: translateY(-5px);
+            }
+
+            .mobile-tab i {
+                font-size: 1.2rem;
+                margin-bottom: 3px;
+            }
+
+            .mobile-tab span {
+                font-size: 0.7rem;
+            }
+
+            .game-container > .chat-panel:not(.active),
+            .main-game > .game-controls:not(.active) {
+                display: none;
+            }
+
+            .mobile-active {
+                display: block !important;
+            }
+
+            .chat-panel {
+                min-height: 300px;
+            }
+
+            .chat-messages {
+                max-height: 200px;
+                min-height: 150px;
+            }
+
+            .open-chat-button {
+                display: none;
+            }
+
+            .open-chat-button.active {
+                display: flex;
+            }
+
+            .mobile-chat-container {
+                bottom: 70px;
+                left: 10px;
+                right: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+
+            .team-info {
+                flex-direction: column;
+            }
+
+            .team {
+                min-width: 100%;
+            }
+
+            .role-selector {
+                flex-direction: column;
+            }
+
+            .role-btn {
+                min-width: 100%;
+            }
+
+            .hint-input {
+                flex-direction: column;
+            }
+
+            .chat-input {
+                flex-direction: column;
+            }
+
+            .chat-input input,
+            .chat-input button {
+                width: 100%;
+            }
+
+            button {
+                padding: 10px 12px;
+            }
+
+            .modal-content {
+                padding: 20px;
+            }
+
+            .mobile-chat-container {
+                bottom: 60px;
+                padding: 10px;
+                max-height: 60vh;
+            }
+
+            .open-chat-button {
+                bottom: 60px;
+                width: 55px;
+                height: 55px;
+                font-size: 1.3rem;
+                right: 15px;
+            }
+
+            .mobile-chat-messages {
+                max-height: 200px;
+                min-height: 100px;
+            }
+
+            .mobile-chat-input input {
+                padding: 10px;
+                font-size: 0.9rem;
+            }
+
+            .mobile-chat-input button {
+                padding: 10px 15px;
+            }
+        }
+
+        @media (max-height: 700px) and (orientation: portrait) {
+            .card {
+                min-height: 50px;
+                aspect-ratio: 1 / 0.7;
+            }
+
+            .card .word {
+                font-size: 0.7rem;
+            }
+
+            .chat-messages {
+                max-height: 150px;
+            }
+        }
+
+        @media (max-height: 500px) and (orientation: landscape) {
+            .container {
+                padding: 5px;
+            }
+
+            .game-container {
+                grid-template-columns: 2fr 1fr;
+                gap: 10px;
+            }
+
+            .cards-grid {
+                grid-template-columns: repeat(5, 1fr);
+                grid-gap: 5px;
+            }
+
+            .card {
+                min-height: 40px;
+                padding: 4px;
+            }
+
+            .card .word {
+                font-size: 0.6rem;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .cards-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .card {
+                aspect-ratio: 1 / 0.6;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .team h3 {
+                font-size: 1rem;
+            }
+
+            .header-content {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .rules-btn-header {
+                position: static;
+                margin: 10px 0 0 0;
+            }
+        }
+
+        .card.blue .word,
+        .card.red .word,
+        .card.assassin .word {
+            color: white !important;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8) !important;
+            font-weight: 600 !important;
+            letter-spacing: 0.5px;
+        }
+
+        .card.neutral .word {
+            color: #222 !important;
+            text-shadow: none !important;
+            font-weight: 600 !important;
+        }
+
+        .card .word {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .simple-role-info {
+            font-size: 0.9rem;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        .simple-role-info p {
+            margin: 5px 0;
+        }
+
+        .simple-role-info strong {
+            color: #8f94fb;
+        }
+
+        .rules-btn-main {
+            margin-top: 10px;
+            background: linear-gradient(135deg, #8f94fb, #4e54c8);
+            color: white;
+        }
+
+        /* Предупреждение о времени для мастера */
+        .master-time-warning {
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.2), rgba(231, 76, 60, 0.1));
+            color: #e74c3c;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            text-align: center;
+            font-weight: bold;
+            border: 2px solid rgba(231, 76, 60, 0.3);
+            display: none;
+        }
+
+        /* НОВЫЕ СТИЛИ ДЛЯ ЛОББИ И ПАНЕЛИ УПРАВЛЕНИЯ */
+
+        /* Стили для лобби */
+        .lobby-container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 30px;
+            background: linear-gradient(135deg, var(--panel-bg), #1a335a);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            border: 2px solid rgba(143, 148, 251, 0.3);
+        }
+
+        .lobby-container h2 {
+            color: #8f94fb;
+            margin-bottom: 30px;
+            font-size: 2.2rem;
+        }
+
+        .lobby-options {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .lobby-option {
+            flex: 1;
+            min-width: 250px;
+            padding: 30px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .lobby-option:hover {
+            transform: translateY(-5px);
+            border-color: var(--blue-team);
+            background: rgba(52, 152, 219, 0.1);
+        }
+
+        .lobby-option i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: #8f94fb;
+        }
+
+        .lobby-option h3 {
+            color: white;
+            margin-bottom: 10px;
+            font-size: 1.5rem;
+        }
+
+        .lobby-option p {
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        .code-input-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            display: none;
+        }
+
+        .code-input-section.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .code-input {
+            display: flex;
+            gap: 10px;
+            max-width: 400px;
+            margin: 20px auto;
+        }
+
+        .code-input input {
+            flex: 1;
+            font-size: 1.5rem;
+            text-align: center;
+            letter-spacing: 5px;
+            font-weight: bold;
+        }
+
+        .game-code-display {
+            margin: 30px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.2), rgba(52, 152, 219, 0.1));
+            border-radius: 10px;
+            border: 2px solid var(--blue-team);
+        }
+
+        .game-code {
+            font-size: 2.5rem;
+            font-weight: bold;
+            letter-spacing: 8px;
+            color: white;
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            font-family: monospace;
+        }
+
+        .players-waiting {
+            margin-top: 30px;
+        }
+
+        .players-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+
+        .player-waiting {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .player-waiting:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateX(5px);
+        }
+
+        .player-waiting .player-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .player-waiting .player-name {
+            font-weight: bold;
+        }
+
+        .player-waiting .kick-btn {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .player-waiting .kick-btn:hover {
+            background: #e74c3c;
+            color: white;
+        }
+
+        /* Панель управления для создателя */
+        .admin-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .admin-toggle-btn {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .admin-toggle-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        .admin-controls {
+            position: absolute;
+            top: 60px;
+            right: 0;
+            background: linear-gradient(135deg, var(--panel-bg), #1a335a);
+            border-radius: 10px;
+            padding: 20px;
+            min-width: 300px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(143, 148, 251, 0.3);
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+
+        .admin-controls.active {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .admin-controls h3 {
+            color: #8f94fb;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .admin-controls h3 i {
+            font-size: 1.2rem;
+        }
+
+        .admin-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .admin-btn {
+            padding: 12px 15px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-align: left;
+        }
+
+        .admin-btn:hover {
+            background: rgba(52, 152, 219, 0.3);
+            transform: translateX(5px);
+        }
+
+        .admin-btn.warning {
+            background: rgba(231, 76, 60, 0.2);
+        }
+
+        .admin-btn.warning:hover {
+            background: rgba(231, 76, 60, 0.4);
+        }
+
+        .admin-btn.danger {
+            background: rgba(192, 57, 43, 0.2);
+        }
+
+        .admin-btn.danger:hover {
+            background: rgba(192, 57, 43, 0.4);
+        }
+
+        /* Индикатор создателя комнаты */
+        .room-creator-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            z-index: 10;
+        }
+
+        /* Анимация перехода в игру */
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        .transitioning {
+            animation: fadeOut 0.5s ease forwards;
+        }
+
+        /* Стили для паузы игры */
+        .game-paused-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            flex-direction: column;
+            color: white;
+            text-align: center;
+            display: none;
+        }
+
+        .game-paused-overlay.active {
+            display: flex;
+        }
+
+        .paused-text {
+            font-size: 4rem;
+            font-weight: bold;
+            color: #f1c40f;
+            margin-bottom: 20px;
+            animation: pulse 1.5s infinite;
+        }
+
+        .paused-subtext {
+            font-size: 1.5rem;
+            color: #8f94fb;
+            max-width: 500px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+<!-- Лобби (начальный экран) -->
+<div class="modal-overlay" id="lobby-modal" style="display: flex;">
+    <div class="lobby-container">
+        <h2><i class="fas fa-door-open"></i> Codenames Online</h2>
+        <p style="color: #8f94fb; margin-bottom: 30px; font-size: 1.1rem;">Создайте комнату или присоединитесь к игре</p>
+
+        <div class="lobby-options">
+            <div class="lobby-option" id="create-game-btn">
+                <i class="fas fa-plus-circle"></i>
+                <h3>Создать игру</h3>
+                <p>Создайте новую комнату и пригласите друзей</p>
+            </div>
+
+            <div class="lobby-option" id="join-game-btn">
+                <i class="fas fa-sign-in-alt"></i>
+                <h3>Войти по коду</h3>
+                <p>Присоединитесь к существующей игре</p>
+            </div>
+        </div>
+
+        <div class="code-input-section" id="code-input-section">
+            <h3><i class="fas fa-key"></i> Введите код игры</h3>
+            <p style="color: #aaa; margin-bottom: 15px;">Попросите код у создателя комнаты</p>
+            <div class="code-input">
+                <input type="text" id="room-code-input" placeholder="XXXXXX" maxlength="6" style="text-transform: uppercase;">
+                <button class="join-btn" id="join-room-btn" style="width: auto; padding: 12px 25px;">
+                    <i class="fas fa-play"></i> Войти
+                </button>
+            </div>
+        </div>
+
+        <div id="game-lobby" style="display: none;">
+            <div class="game-code-display">
+                <h3><i class="fas fa-users"></i> Ожидание игроков</h3>
+                <p style="color: #aaa;">Поделитесь этим кодом с друзьями:</p>
+                <div class="game-code" id="game-code-display">XXXXXX</div>
+                <p style="color: #8f94fb; font-size: 0.9rem;">
+                    <i class="fas fa-info-circle"></i> Игра начнется автоматически, когда все присоединятся
+                </p>
+            </div>
+
+            <div class="players-waiting">
+                <h4><i class="fas fa-user-friends"></i> Игроки в лобби:</h4>
+                <div class="players-list" id="lobby-players-list">
+                    <!-- Игроки будут добавлены здесь -->
+                </div>
+            </div>
+
+            <button class="new-game-btn" id="start-game-btn" style="margin-top: 20px;">
+                <i class="fas fa-play"></i> Начать игру
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Основной контейнер игры (изначально скрыт) -->
+<div class="container" id="game-container" style="display: none;">
+    <header>
+        <div class="room-creator-badge" id="room-creator-badge" style="display: none;">
+            <i class="fas fa-crown"></i> Создатель комнаты
+        </div>
+        <div class="header-content">
+            <h1><i class="fas fa-user-secret"></i> Codenames Online</h1>
+            <button class="rules-btn-header" id="rules-btn-header" title="Правила игры">
+                <i class="fas fa-question-circle"></i>
+            </button>
+        </div>
+        <p class="subtitle">Мультиплеерная версия с сохранением игры</p>
+    </header>
+
+    <div class="game-container">
+        <div class="main-game">
+            <section class="game-board">
+                <div class="team-info">
+                    <div class="team blue">
+                        <h3><i class="fas fa-user-tie"></i> Синие</h3>
+                        <div class="score" id="blue-score">9</div>
+                        <div>Карт: <span id="blue-cards" class="card-counter">9</span></div>
+                        <div class="team-players" id="blue-players">
+                            <!-- Игроки будут добавлены через JS -->
+                        </div>
+                    </div>
+
+                    <div class="team red">
+                        <h3><i class="fas fa-user-tie"></i> Красные</h3>
+                        <div class="score" id="red-score">8</div>
+                        <div>Карт: <span id="red-cards" class="card-counter">8</span></div>
+                        <div class="team-players" id="red-players">
+                            <!-- Игроки будут добавлены через JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timer" id="timer">--:--</div>
+
+                <!-- Таймер для мастера -->
+                <div class="master-timer" id="master-timer">--:--</div>
+
+                <!-- Предупреждение о времени для мастера -->
+                <div class="master-time-warning" id="master-time-warning">
+                    ⏰ У мастера осталось 30 секунд!
+                </div>
+
+                <div id="turn-indicator" class="status-message blue">Ход синей команды</div>
+
+                <div class="cards-grid" id="cards-container">
+                    <!-- Карточки будут сгенерированы JavaScript -->
+                </div>
+            </section>
+
+            <section class="game-controls mobile-active">
+                <div class="player-panel">
+                    <h2><i class="fas fa-user"></i> Ваш игрок</h2>
+
+                    <div class="simple-role-info" id="player-role-info">
+                        <p><strong>Имя:</strong> Не указано</p>
+                        <p><strong>Команда:</strong> Не присоединен</p>
+                    </div>
+
+                    <div class="name-input-section">
+                        <input type="text" id="player-name-input" placeholder="Введите ваше имя" value="">
+                        <button class="join-btn" id="save-name-btn">Сохранить</button>
+                    </div>
+
+                    <div class="role-selector">
+                        <button class="join-btn role-btn" id="join-blue-btn">
+                            <i class="fas fa-plus-circle"></i> Синяя команда
+                        </button>
+                        <button class="join-btn role-btn" id="join-red-btn">
+                            <i class="fas fa-plus-circle"></i> Красная команда
+                        </button>
+                    </div>
+
+                    <div class="role-selector" id="master-buttons" style="display: none;">
+                        <button class="master-view-btn role-btn" id="become-master-btn">
+                            <i class="fas fa-crown"></i> Стать мастером
+                        </button>
+                    </div>
+
+                    <button class="leave-btn" id="leave-game-btn" style="display: none; margin-top: 12px;">
+                        <i class="fas fa-sign-out-alt"></i> Покинуть команду
+                    </button>
+
+                    <div id="hint-controls" style="display: none; margin-top: 15px;">
+                        <h3><i class="fas fa-lightbulb"></i> Подсказка</h3>
+                        <div class="master-timer" id="master-hint-timer">--:--</div>
+                        <div class="master-time-warning" id="master-hint-warning">
+                            ⏰ У мастера осталось 30 секунд!
+                        </div>
+                        <div class="hint-input">
+                            <input type="text" id="hint-word" placeholder="Слово-подсказка">
+                            <input type="number" id="hint-number" placeholder="Число (0 и больше)" min="0">
+                            <button class="hint-btn" id="give-hint-btn">Дать подсказку</button>
+                        </div>
+                    </div>
+
+                    <button class="rules-btn-main" id="rules-btn-main">
+                        <i class="fas fa-question-circle"></i> Правила игры
+                    </button>
+                </div>
+
+                <div class="player-panel">
+                    <h2><i class="fas fa-history"></i> Подсказки</h2>
+                    <div class="current-hint" id="current-hint">
+                        <strong>Текущая подсказка:</strong> <span id="hint-text">-</span> (<span id="hint-count">0</span>)
+                    </div>
+                    <div class="hint-history" id="hint-history">
+                        <!-- История подсказок -->
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <section class="player-panel chat-panel">
+            <h2><i class="fas fa-comments"></i> Чат игры</h2>
+            <div class="chat-messages" id="chat-messages">
+                <div class="message system">Добро пожаловать в Codenames Online! Введите имя и присоединяйтесь к команде.</div>
+            </div>
+            <div class="chat-input">
+                <input type="text" id="chat-input" placeholder="Введите сообщение..." disabled>
+                <button id="send-chat-btn" disabled><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </section>
+    </div>
+
+    <!-- Панель управления для создателя комнаты -->
+    <div class="admin-panel">
+        <button class="admin-toggle-btn" id="admin-toggle-btn">
+            <i class="fas fa-cog"></i>
+        </button>
+        <div class="admin-controls" id="admin-controls">
+            <h3><i class="fas fa-user-shield"></i> Панель управления</h3>
+            <div class="admin-buttons">
+                <button class="admin-btn" id="shuffle-teams-btn">
+                    <i class="fas fa-random"></i> Перемешать команды
+                </button>
+                <button class="admin-btn" id="pause-game-btn">
+                    <i class="fas fa-pause"></i> Пауза игры
+                </button>
+                <button class="admin-btn warning" id="end-game-btn">
+                    <i class="fas fa-flag-checkered"></i> Завершить игру
+                </button>
+                <button class="admin-btn danger" id="reset-game-btn">
+                    <i class="fas fa-redo"></i> Сбросить игру
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Мобильное меню -->
+    <div class="mobile-menu">
+        <a href="#" class="mobile-tab active" data-tab="game">
+            <i class="fas fa-gamepad"></i>
+            <span>Игра</span>
+        </a>
+        <a href="#" class="mobile-tab" data-tab="controls">
+            <i class="fas fa-cogs"></i>
+            <span>Управление</span>
+        </a>
+        <a href="#" class="mobile-tab" data-tab="chat">
+            <i class="fas fa-comments"></i>
+            <span>Чат</span>
+        </a>
+    </div>
+
+    <!-- Кнопка открытия чата на мобильных -->
+    <button class="open-chat-button" id="open-chat-btn">
+        <i class="fas fa-comment"></i>
+        <span class="chat-badge" id="chat-badge" style="display: none;">0</span>
+    </button>
+
+    <!-- Мобильный контейнер чата -->
+    <div class="mobile-chat-container" id="mobile-chat-container">
+        <div class="mobile-chat-header">
+            <h3><i class="fas fa-comments"></i> Чат игры</h3>
+            <button class="close-mobile-chat" id="close-mobile-chat">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="mobile-chat-messages" id="mobile-chat-messages">
+            <div class="message system">Добро пожаловать в Codenames Online!</div>
+        </div>
+        <div class="mobile-chat-input">
+            <input type="text" id="mobile-chat-input-field" placeholder="Введите сообщение..." disabled>
+            <button id="send-mobile-chat-btn" disabled>
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
+    <footer>
+        <p>Codenames Online | Автосохранение | Откройте на нескольких устройствах</p>
+    </footer>
+</div>
+
+<!-- Окно паузы игры -->
+<div class="game-paused-overlay" id="game-paused-overlay">
+    <div class="paused-text">ПАУЗА</div>
+    <div class="paused-subtext">Игра приостановлена создателем комнаты. Ожидайте продолжения...</div>
+</div>
+
+<!-- Модальное окно восстановления игры -->
+<div class="modal-overlay" id="restore-modal" style="display: none;">
+    <div class="modal-content">
+        <button class="close-modal-btn" id="close-restore-btn">&times;</button>
+        <h2><i class="fas fa-history"></i> Сохраненная игра</h2>
+        <p>В вашем браузере найдена сохраненная игра. Хотите восстановить её или начать новую?</p>
+        <div class="modal-buttons">
+            <button class="new-game-btn" id="restore-game-btn">Восстановить игру</button>
+            <button class="leave-btn" id="new-game-modal-btn">Начать новую игру</button>
+        </div>
+    </div>
+</div>
+
+<!-- Окно правил игры -->
+<div class="modal-overlay" id="rules-modal" style="display: none;">
+    <div class="modal-content">
+        <button class="close-modal-btn" id="close-rules-btn">&times;</button>
+        <h2><i class="fas fa-book"></i> Правила игры Codenames</h2>
+
+        <div class="rules-content">
+            <h3><i class="fas fa-bullseye"></i> Цель игры</h3>
+            <p>Команды соревнуются, чтобы первыми найти всех своих агентов на поле, используя подсказки от своих шпион-мастеров.</p>
+
+            <h3><i class="fas fa-users"></i> Роли</h3>
+            <p><strong>Шпион-мастер</strong> (👑) - видит цвета всех карточек и дает подсказки своей команде.</p>
+            <p><strong>Полевые агенты</strong> - выбирают карточки на поле, основываясь на подсказках шпион-мастера.</p>
+
+            <h3><i class="fas fa-play-circle"></i> Игровой процесс</h3>
+            <ol>
+                <li>Шпион-мастер дает подсказку из одного слова и числа (сколько карточек связано с этим словом).</li>
+                <li>Полевые агенты обсуждают и выбирают карточки, которые, по их мнению, относятся к подсказке.</li>
+                <li>Если выбрана карточка своей команды, команда может продолжить угадывать.</li>
+                <li>Если выбрана карточка другой команды, нейтральная карточка или убийца - ход переходит другой команде.</li>
+                <li>Побеждает команда, первой нашедшая всех своих агентов.</li>
+            </ol>
+
+            <h3><i class="fas fa-palette"></i> Цвета карточек</h3>
+            <ul>
+                <li><span class="color-sample blue"></span> <strong>Синие</strong> - агенты синей команды</li>
+                <li><span class="color-sample red"></span> <strong>Красные</strong> - агенты красной команда</li>
+                <li><span class="color-sample neutral"></span> <strong>Серые</strong> - нейтральные мирные жители</li>
+                <li><span class="color-sample assassin"></span> <strong>Черные</strong> - убийца (проигрыш при выборе)</li>
+            </ul>
+
+            <h3><i class="fas fa-lightbulb"></i> Подсказки</h3>
+            <p>Подсказка состоит из одного слова и числа. Например: "Животные 3" означает, что 3 карточки на поле связаны с животными.</p>
+            <p>Число может быть 0, если мастер считает, что на поле нет связанных слов.</p>
+
+            <h3><i class="fas fa-clock"></i> Таймер</h3>
+            <p>На подсказку и выбор слов дается 1.5 минуты (90 секунд). При истечении времени ход переходит другой команде.</p>
+            <p><strong>Важно:</strong> У мастера и команды синхронизированный таймер на 90 секунд. Карточки блокируются до тех пор, пока мастер не даст подсказку!</p>
+
+            <p style="text-align: center; margin-top: 25px; color: #8f94fb; font-weight: bold;">Удачи в игре!</p>
+        </div>
+
+        <div class="modal-buttons">
+            <button class="new-game-btn" id="close-rules-modal-btn">Закрыть</button>
+        </div>
+    </div>
+</div>
+
+<!-- Поздравление победителя -->
+<div class="winner-celebration" id="winner-celebration">
+    <div class="winner-text" id="winner-text">ПОБЕДА!</div>
+    <div class="winner-subtext" id="winner-subtext"></div>
+    <button class="new-game-btn" id="next-game-btn" style="padding: 15px 30px; font-size: 1.1rem;">
+        <i class="fas fa-play-circle"></i> Следующая игра
+    </button>
+</div>
+
+<script>
+    // КОНСТАНТЫ ДЛЯ LOCALSTORAGE
+    const STORAGE_KEY = 'codenames_game_state';
+    const PLAYER_NAME_KEY = 'codenames_player_name';
+    const ROOM_CODE_KEY = 'codenames_room_code';
+    const ROOM_CREATOR_KEY = 'codenames_room_creator';
+    const LOBBY_PLAYERS_KEY = 'codenames_lobby_players';
+
+    // ИГРОВЫЕ ПЕРЕМЕННЫЕ
+    let gameState = {
+        cards: [],
+        blueScore: 0,
+        redScore: 0,
+        blueCardsRemaining: 9,
+        redCardsRemaining: 8,
+        currentTeam: 'blue',
+        currentHint: null,
+        gameOver: false,
+        timer: null,
+        timeLeft: 0,
+        timerRunning: false,
+        masterTimer: null,
+        masterTimeLeft: 0,
+        masterTimerRunning: false,
+        players: {
+            blue: [],
+            red: []
+        },
+        playerId: generatePlayerId(),
+        playerName: '',
+        playerTeam: null,
+        playerRole: 'agent',
+        hintsHistory: [],
+        chatHistory: [],
+        gameNumber: 1,
+        newMessagesCount: 0,
+        cardsBlocked: true
+    };
+
+    // ПЕРЕМЕННЫЕ ДЛЯ СИСТЕМЫ КОМНАТ
+    let roomCode = '';
+    let isRoomCreator = false;
+    let gamePaused = false;
+    let lobbyPlayers = [];
+
+    // РАСШИРЕННЫЙ СПИСОК СЛОВ (250+ в каждой категории)
+    const wordList = [
+        // ЖИВОТНЫЕ (100+ слов)
+        'АИСТ', 'АКУЛА', 'АЛЬБАТРОС', 'АНТИЛОПА', 'БАБОЧКА', 'БАРСУК', 'БЕГЕМОТ', 'БЕЛКА', 'БЕЛЫЙ МЕДВЕДЬ',
+        'БИЗОН', 'БОБР', 'БОЖЬЯ КОРОВКА', 'БУЙВОЛ', 'ВЕПРЬ', 'ВЕРБЛЮД', 'ВОЛК', 'ВОРОБЕЙ', 'ВОРОНА',
+        'ВЫДРА', 'ГАДЮКА', 'ГЕПАРД', 'ГИЕНА', 'ГИППОПОТАМ', 'ГОЛУБЬ', 'ГОРИЛЛА', 'ГУСЬ', 'ДЕЛЬФИН',
+        'ДИНОЗАВР', 'ДЯТЕЛ', 'ЕНОТ', 'ЁЖ', 'ЖАБА', 'ЖИРАФ', 'ЖУК', 'ЗАЯЦ', 'ЗЕБРА', 'ЗМЕЯ',
+        'ИНДЮК', 'КАБАН', 'КАЛЬМАР', 'КЕНГУРУ', 'КИТ', 'КОЗЁЛ', 'КОЗОДОЙ', 'КОЛОБУС', 'КОМАР',
+        'КОНЬ', 'КОРОСТЕЛЬ', 'КОРОШКА', 'КОШКА', 'КРАБ', 'КРОКОДИЛ', 'КРОЛИК', 'КРОТ', 'КРЫСА',
+        'КУЗНЕЧИК', 'КУКУШКА', 'КУНИЦА', 'КУРИЦА', 'ЛАМА', 'ЛАСТОЧКА', 'ЛЕВ', 'ЛЕОПАРД', 'ЛЕТУЧАЯ МЫШЬ',
+        'ЛИСА', 'ЛОСЬ', 'ЛЯГУШКА', 'МАНГУСТ', 'МАНУЛ', 'МАРТЫШКА', 'МЕДВЕДЬ', 'МЕДОСОС', 'МЕДУЗА',
+        'МОЛЛЮСК', 'МОРЖ', 'МОРСКАЯ СВИНЬЯ', 'МОТЫЛЁК', 'МУРАВЕЙ', 'МУРАВЬЕД', 'МУХА', 'НАСЕКОМОЕ',
+        'НОСОРОГ', 'ОБЕЗЬЯНА', 'ОВЦА', 'ОЛЕНЬ', 'ОМАР', 'ОРЁЛ', 'ОСА', 'ОСЕЛ', 'ОСМИНОГ', 'ОХОТНИК',
+        'ПАНДА', 'ПАУК', 'ПЕЛИКАН', 'ПЕНГВИН', 'ПЕТУХ', 'ПИНГВИН', 'ПИТОН', 'ПОНИ', 'ПОПУГАЙ',
+        'ПЧЕЛА', 'ПЯТНИСТЫЙ ДЕЛЬФИН', 'РАК', 'РЫБА', 'СВИНЬЯ', 'СВЕРЧОК', 'СЕЛЁДКА', 'СКАРАБЕЙ',
+        'СКВОРЕЦ', 'СКОРПИОН', 'СКУНС', 'СЛОН', 'СНЕГИРЬ', 'СОВА', 'СОБАКА', 'СОКОЛ', 'СОЛОВЕЙ',
+        'СОРОКА', 'СТРАУС', 'СТРЕКОЗА', 'СТРИЖ', 'СУРИКАТ', 'СУРОК', 'ТАРАКАН', 'ТЕЛЁНОК', 'ТИГР',
+        'ТИХОХОДКА', 'ТРЕСКА', 'ТРЕПАНГ', 'ТРИТОН', 'ТУР', 'ТЮЛЕНЬ', 'УЖ', 'УЛИТКА', 'УТКА', 'ФЕНИКС',
+        'ФЛАМИНГО', 'ХОМЯК', 'ЦАПЛЯ', 'ЦИКАДА', 'ЧАЙКА', 'ЧЕРЕПАХА', 'ШАКАЛ', 'ШИМПАНЗЕ', 'ШМЕЛЬ',
+        'ЩЕГОЛ', 'ЩУКА', 'ЭМУ', 'ЮРК', 'ЯГНЁНОК', 'ЯГУАР', 'ЯЩЕРИЦА', 'ЯЩЕР',
+
+        // ПРИРОДА (100+ слов)
+        'АЙСБЕРГ', 'АТОЛЛ', 'БЕРЕГ', 'БОЛОТО', 'БУХТА', 'ВЕРШИНА', 'ВОДОПАД', 'ВОЗВЫШЕННОСТЬ',
+        'ВОЛНА', 'ВУЛКАН', 'ВЫСОТА', 'ГОРА', 'ГОРИЗОНТ', 'ГРОЗА', 'ГРОТ', 'ДАЛИ', 'ДОЛИНА',
+        'ДОЖДЬ', 'ЖАРА', 'ЗАЛИВ', 'ЗАРЯ', 'ЗАКАТ', 'ЗВЕЗДА', 'ЗЕМЛЯ', 'ЗИМА', 'ИЗВЕРЖЕНИЕ',
+        'КАМЕНЬ', 'КАМЫШ', 'КАМЬОН', 'КАРСТ', 'КИПЕНИЕ', 'КЛИМАТ', 'КОСМОС', 'КОТЛОВИНА',
+        'КРАТЕР', 'КРИСТАЛЛ', 'КРУЧА', 'ЛАВИНА', 'ЛАГУНА', 'ЛАНДШАФТ', 'ЛЕД', 'ЛЕДНИК',
+        'ЛЕС', 'ЛУГ', 'ЛУНА', 'МАГМА', 'МЕАНДР', 'МЕСТНОСТЬ', 'МИРАЖ', 'МОРЕ', 'МОХ',
+        'МРАМОР', 'МУССОН', 'НАВОДНЕНИЕ', 'НИЗМЕННОСТЬ', 'НИЗИНА', 'НОЧЬ', 'ОАЗИС', 'ОБЛАКО',
+        'ОБРЫВ', 'ОВРАГ', 'ОГОНЬ', 'ОЗЕРО', 'ОКЕАН', 'ОПОЛЗЕНЬ', 'ОСТРОВ', 'ОТМЕЛЬ',
+        'ПАДИНА', 'ПАР', 'ПЕЙЗАЖ', 'ПЕСОК', 'ПЕЩЕРА', 'ПЛАВНИ', 'ПЛАТО', 'ПЛЯЖ',
+        'ПОВЕРХНОСТЬ', 'ПОГОДА', 'ПОЛДЕНЬ', 'ПОЛЕ', 'ПОЛНОЧЬ', 'ПОЛЮС', 'ПОРОГ', 'ПОТОК',
+        'ПРЕСНЫЙ', 'ПРИБОЙ', 'ПРИЛИВ', 'ПРИРОДА', 'ПРОЛИВ', 'ПРОМОИНА', 'ПРОСТОР', 'ПУСТЫНЯ',
+        'ПЯТНО', 'РАВНИНА', 'РАДУГА', 'РАССВЕТ', 'РЕКА', 'РИФ', 'РОВ', 'РОСА', 'РУДНИК',
+        'РУСЛО', 'РУЧЕЙ', 'РЫТВИНА', 'САВАННА', 'СВЕТ', 'СЕВЕР', 'СЕЛ', 'СЕНО', 'СКАЛА',
+        'СКЛОН', 'СНЕГ', 'СОЛНЦЕ', 'СТЕПЬ', 'СТОК', 'СТОЯЧИЙ', 'СУГЛИНОК', 'СУМЕРКИ',
+        'СУША', 'ТАЙГА', 'ТЕЧЕНИЕ', 'ТИНА', 'ТОЛЩА', 'ТОРНАДО', 'ТРАВА', 'ТРОПА', 'ТУЧА',
+        'ТУМАН', 'ТЬМА', 'УРАГАН', 'УТЕС', 'УТРО', 'ФЬОРД', 'ХВОЯ', 'ХОЛМ', 'ХРЕБЕТ',
+        'ХРУСТАЛЬ', 'ЦУНАМИ', 'ЧАЩА', 'ШАХТА', 'ШТОРМ', 'ШХЕРЫ', 'ЭРОЗИЯ', 'ЮГ', 'ЯДРО',
+        'ЯМА', 'ЯР', 'ЯРУС',
+
+        // ЕДА И НАПИТКИ (100+ слов)
+        'АВОКАДО', 'АЙВА', 'АЙСБЕРГ', 'АЛКОГОЛЬ', 'АМАРАНТ', 'АНАНАС', 'АПЕЛЬСИН', 'АРАХИС',
+        'АРБУЗ', 'БАКЛАЖАН', 'БАНАН', 'БАТАТ', 'БЕЛЫЙ ХЛЕБ', 'БЛИН', 'БОРЩ', 'БРЫНЗА', 'БУЛОЧКА',
+        'ВАРЕНЬЕ', 'ВАФЛЯ', 'ВЕТЧИНА', 'ВИНО', 'ВИНОГРАД', 'ВОДКА', 'ВЯЛЕНЫЙ', 'ГАЗИРОВКА',
+        'ГВОЗДИКА', 'ГОВЯДИНА', 'ГОЛУБИКА', 'ГОРБУША', 'ГОРЧИЦА', 'ГОРОХ', 'ГРАНАТ', 'ГРЕЙПФРУТ',
+        'ГРЕЧКА', 'ГРИБ', 'ГРУША', 'ДЖЕМ', 'ДИЕТА', 'ДРОЖЖИ', 'ДЫНЯ', 'ЕДА', 'ЖАРЕНОЕ',
+        'ЖЕЛЕ', 'ЖИР', 'ЗАВТРАК', 'ЗАКУСКА', 'ЗЕЛЕНЬ', 'ЗЕФИР', 'ИЗЮМ', 'ИКРА', 'ИНДЕЙКА',
+        'КАБАЧОК', 'КАКАО', 'КАЛЬМАР', 'КАПУСТА', 'КАРАМЕЛЬ', 'КАРТОФЕЛЬ', 'КАША', 'КВАС',
+        'КЕДРОВЫЙ ОРЕХ', 'КЕФИР', 'КИВИ', 'КИСЕЛЬ', 'КИШМИШ', 'КЛУБНИКА', 'КЛЮКВА', 'КОББЛЕР',
+        'КОЛБАСА', 'КОНСЕРВЫ', 'КОНФЕТА', 'КОПЧЁНОСТЬ', 'КОРИЦА', 'КОРНЕТ', 'КОФЕ', 'КРАБ',
+        'КРЕВЕТКА', 'КРУАССАН', 'КУКУРУЗА', 'КУРАГА', 'КУРИЦА', 'ЛЕДЕНЕЦ', 'ЛИМОН', 'ЛУК',
+        'МАКАРОНЫ', 'МАЛИНА', 'МАНДАРИН', 'МАРМЕЛАД', 'МАСЛО', 'МЁД', 'МОЛОКО', 'МОРЕПРОДУКТ',
+        'МОРОЖЕНОЕ', 'МУКА', 'МЯСО', 'НАПИТОК', 'НАТУРАЛЬНЫЙ', 'ОВОЩ', 'ОВСЯНКА', 'ОГУРЕЦ',
+        'ОЛАДЬИ', 'ОЛИВКА', 'ОМЛЕТ', 'ОРЕХ', 'ОСТРЫЙ', 'ПАПАЙЯ', 'ПАСТА', 'ПЕЛЬМЕНИ',
+        'ПЕПСИ', 'ПЕРСИК', 'ПЕТРУШКА', 'ПИРОГ', 'ПИРОЖНОЕ', 'ПИЦЦА', 'ПЛОД', 'ПЛОМБИР',
+        'ПЛЮШКА', 'ПОВАР', 'ПОДЛИВА', 'ПОМИДОР', 'ПОРОШОК', 'ПРОДУКТ', 'ПУДИНГ', 'ПШЕНО',
+        'РЕДИС', 'РЕПА', 'РИС', 'РЫБА', 'РЯБИНА', 'САЛАТ', 'САЛО', 'САХАР', 'СВЕКЛА',
+        'СЕЛЁДКА', 'СЕМЕЧКИ', 'СИРОП', 'СКУМБРИЯ', 'СЛИВА', 'СЛИВКИ', 'СМЕТАНА', 'СОК',
+        'СОЛЁНЫЙ', 'СОУС', 'СПАГЕТТИ', 'СТАКАН', 'СУП', 'СУФЛЕ', 'СУШИ', 'СЫР', 'ТВОРОГ',
+        'ТЕЛЯТИНА', 'ТОМАТ', 'ТОРТ', 'ТРАПЕЗА', 'ТЫКВА', 'УГОЩЕНИЕ', 'УКСУС', 'УКРОП',
+        'УСТРИЦА', 'ФАРШ', 'ФАСОЛЬ', 'ФИЛЕ', 'ФИНИК', 'ФРУКТ', 'ХАЛВА', 'ХЛЕБ', 'ХЛОПЬЯ',
+        'ХОЛОДЕЦ', 'ХУРМА', 'ЦВЕТНАЯ КАПУСТА', 'ЧАЙ', 'ЧЕРЕШНЯ', 'ЧЕРНИКА', 'ЧЕРНОСЛИВ',
+        'ЧЕСНОК', 'ШАМПИНЬОН', 'ШАШЛЫК', 'ШИПОВНИК', 'ШНИЦЕЛЬ', 'ШОКОЛАД', 'ШПИНАТ', 'ШТРУДЕЛЬ',
+        'ЩАВЕЛЬ', 'ЭКЛЕР', 'ЯБЛОКО', 'ЯГОДА', 'ЯИЧНИЦА', 'ЯЙЦО', 'ЯЧМЕНЬ',
+
+        // ПРОФЕССИИ (100+ слов)
+        'АВИАДИСПЕТЧЕР', 'АВИАМЕХАНИК', 'АГРОНОМ', 'АДВОКАТ', 'АКТЁР', 'АКУШЕР', 'АНАЛИТИК',
+        'АРХЕОЛОГ', 'АРХИТЕКТОР', 'АСТРОНАВТ', 'АСТРОНОМ', 'БАЛЕРИНА', 'БАНКИР', 'БАРИСТА',
+        'БИОЛОГ', 'БОРТПРОВОДНИК', 'БУЛЬДОЗЕРИСТ', 'БУРИЛЬЩИК', 'БУХГАЛТЕР', 'ВАГОНОВОЖАТЫЙ',
+        'ВЕДУЩИЙ', 'ВЕРТОЛЁТЧИК', 'ВЕТЕРИНАР', 'ВОДИТЕЛЬ', 'ВОЕННЫЙ', 'ВОСПИТАТЕЛЬ', 'ВРАЧ',
+        'ГЕОЛОГ', 'ГИД', 'ГЛАВНЫЙ ИНЖЕНЕР', 'ГОРНИЧНАЯ', 'ГРАНДМАСТЕР', 'ГРУЗЧИК', 'ДЕГУСТАТОР',
+        'ДЕЖУРНЫЙ', 'ДИЗАЙНЕР', 'ДИКТОР', 'ДИРЕКТОР', 'ДОИЛЬЩИЦА', 'ДОКТОР', 'ДРЕССИРОВЩИК',
+        'ЖИВОПИСЕЦ', 'ЖУРНАЛИСТ', 'ЗАВЕДУЮЩИЙ', 'ЗВЕЗДА', 'ЗНАМЕНИТОСТЬ', 'ЗООТЕХНИК',
+        'ИЗВОЗЧИК', 'ИЛЛЮЗИОНИСТ', 'ИНЖЕНЕР', 'ИНСПЕКТОР', 'ИНСТРУКТОР', 'ИССЛЕДОВАТЕЛЬ',
+        'КАМЕНЩИК', 'КИНОЛОГ', 'КИНООПЕРАТОР', 'КОМАНДИР', 'КОММЕРСАНТ', 'КОМПОЗИТОР',
+        'КОНСТРУКТОР', 'КОНТРОЛЁР', 'КОНТРОЛЁР', 'КОНТЬЮНКТУРЩИК', 'КОРАБЕЛ', 'КОСМОНАВТ', 'КРАНОВЩИК',
+        'КУЗНЕЦ', 'ЛАБОРАНТ', 'ЛЕСНИК', 'ЛЁТЧИК', 'ЛОЦМАН', 'МАЛЯР', 'МАНИКЮРЩИЦА',
+        'МАРКЕТОЛОГ', 'МАШИНИСТ', 'МЕДИК', 'МЕДСЕСТРА', 'МЕНЕДЖЕР', 'МЕТЕОРОЛОГ', 'МЕХАНИК',
+        'МИКРОБИОЛОГ', 'МОДЕЛЬ', 'МОНТАЖНИК', 'МОНТЁР', 'МУЗЫКАНТ', 'НАЧАЛЬНИК', 'НОТАРИУС',
+        'ОБУВЩИК', 'ОФИЦИАНТ', 'ОХОТНИК', 'ОХРАННИК', 'ПАРИКМАХЕР', 'ПЕВЕЦ', 'ПЕКАРЬ',
+        'ПЕРЕВОДЧИК', 'ПИЛОТ', 'ПИСАТЕЛЬ', 'ПОВАР', 'ПОГРАНИЧНИК', 'ПОЖАРНЫЙ', 'ПОЛИЦЕЙСКИЙ',
+        'ПОЧТАЛЬОН', 'ПРЕДПРИНИМАТЕЛЬ', 'ПРЕПОДАВАТЕЛЬ', 'ПРЕЗИДЕНТ', 'ПРИСЯЖНЫЙ', 'ПРОГРАММИСТ',
+        'ПРОДАВЕЦ', 'ПРОЕКТИРОВЩИК', 'ПРОКУРОР', 'ПРОМОУТЕР', 'ПРОФЕССИОНАЛ', 'ПРОФЕССОР',
+        'ПСИХОЛОГ', 'РАБОТНИК', 'РАДИСТ', 'РЕЖИССЁР', 'РЕПОРТЁР', 'РИЭЛТОР', 'РУКОВОДИТЕЛЬ',
+        'РЫБАК', 'САДОВНИК', 'СВАРЩИК', 'СВЯЩЕННИК', 'СЕКРЕТАРЬ', 'СЛЕСАРЬ', 'СОЛДАТ',
+        'СОТРУДНИк', 'СПАСАТЕЛЬ', 'СТАЛЕВАР', 'СТОЛЯР', 'СТРОИТЕЛЬ', 'СТЮАРДЕССА', 'СУДЬЯ',
+        'ТАКСИСТ', 'ТАНЦОР', 'ТЕЛЕФОНИСТ', 'ТЕХНИК', 'ТОКАРЬ', 'ТОРГОВЕЦ', 'ТРАКТОРИСТ',
+        'ТРЕНЕР', 'УБОРЩИК', 'УЧЁНЫЙ', 'УЧИТЕЛЬ', 'ФАРМАЦЕВТ', 'ФЕРМЕР', 'ФИЗИК', 'ФОТОГРАФ',
+        'ХИМИК', 'ХИРУРГ', 'ХОЗЯИН', 'ХОРЕОГРАФ', 'ХУДОЖНИК', 'ЦВЕТОВОД', 'ЧЕРТЁЖНИК',
+        'ШАХТЁР', 'ШВЕЯ', 'ШОФЁР', 'ЭКСКАВАТОРЩИК', 'ЭКСКУРСОВОД', 'ЭКОНОМИСТ', 'ЭЛЕКТРИК',
+        'ЭНЕРГЕТИК', 'ЮВЕЛИР', 'ЮРИСТ',
+
+        // ТЕХНИКА И ТЕХНОЛОГИИ (100+ слов)
+        'АВТОМАТ', 'АВТОМОБИЛЬ', 'АДАПТЕР', 'АККУМУЛЯТОР', 'АКСЕЛЕРОМЕТР', 'АЛГОРИТМ',
+        'АНТЕННА', 'АППАРАТ', 'АРХИТЕКТУРА', 'БАТАРЕЯ', 'БЕСПИЛОТНИК', 'БИТ', 'БЛОК',
+        'БЛЮТУС', 'БОЛТ', 'БОЛТ', 'БОРТОВИК', 'БУКСА', 'ВАКУУМ', 'ВЕНТИЛЯТОР', 'ВЕРСТАК',
+        'ВЕЩАНИЕ', 'ВИБРАТОР', 'ВИДЕО', 'ВИНТ', 'ВОЛОКНО', 'ВЫКЛЮЧАТЕЛЬ', 'ВЫЧИСЛИТЕЛЬ',
+        'ГАДЖЕТ', 'ГАЙКА', 'ГАРАЖ', 'ГЕНЕРАТОР', 'ГИРОСКОП', 'ГОЛОГРАММА', 'ГОРН',
+        'ДАТЧИК', 'ДВИГАТЕЛЬ', 'ДЕТАЛЬ', 'ДИАГРАММА', 'ДИНАМО', 'ДИОД', 'ДИСК',
+        'ДИСПЛЕЙ', 'ДОРОГА', 'ДРОН', 'ДЫМОХОД', 'ЖЕЛЕЗО', 'ЖЕСТКИЙ ДИСК', 'ЗАВОД',
+        'ЗАМОК', 'ЗАПЧАСТЬ', 'ЗАРЯДКА', 'ЗВУК', 'ЗУБЧАТКА', 'ИЗДЕЛИЕ', 'ИЗМЕРЕНИЕ',
+        'ИЗОЛЯТОР', 'ИМПУЛЬС', 'ИНЖЕНЕРИЯ', 'ИНСТРУМЕНТ', 'ИНТЕРФЕЙС', 'ИНФОРМАЦИЯ',
+        'КАБЕЛЬ', 'КАМЕНЬ', 'КАРКАС', 'КАРТА', 'КАТУШКА', 'КВАДРОКОПТЕР', 'КИБЕРНЕТИКА',
+        'КЛАВИАТУРА', 'КОД', 'КОЛЕСО', 'КОЛОДКА', 'КОМАНДА', 'КОМПАС', 'КОМПЬЮТЕР',
+        'КОНСТРУКЦИЯ', 'КОНТАКТ', 'КОНТРОЛЛЕР', 'КОНУС', 'КОРПУС', 'КОСМОС', 'КРАН',
+        'КРЫЛО', 'ЛАБОРАТОРИЯ', 'ЛАЗЕР', 'ЛЕБЁДКА', 'ЛЕСТНИЦА', 'ЛИНИЯ', 'ЛИФТ',
+        'ЛОКОМОТИВ', 'МАГНИТ', 'МАШИНА', 'МЕХАНИЗМ', 'МИКРОСХЕМА', 'МИКСЕР', 'МОДЕЛЬ',
+        'МОДЕМ', 'МОЛОТ', 'МОНИТОР', 'МОСТ', 'МОТОР', 'МЫШЬ', 'НАСОС', 'НАУШНИКИ',
+        'НЕФТЬ', 'НОУТБУК', 'ОБОРУДОВАНИЕ', 'ОПЕРАЦИЯ', 'ОПТИКА', 'ОСНАСТКА', 'ОСЬ',
+        'ОТВЕРТКА', 'ПАНЕЛЬ', 'ПАРОВОЗ', 'ПАРТНЁР', 'ПЕДАЛЬ', 'ПЕРЕДАЧА', 'ПЕЧАТЬ',
+        'ПИЛОТАЖ', 'ПИТАНИЕ', 'ПЛАСТИНА', 'ПЛАТА', 'ПЛИТА', 'ПЛУГ', 'ПНЕВМАТИКА',
+        'ПОДШИПНИК', 'ПОЗИЦИЯ', 'ПОЛЮС', 'ПОРОШОК', 'ПОТОК', 'ПРЕДОХРАНИТЕЛЬ', 'ПРИБОР',
+        'ПРИВОД', 'ПРИНЦИП', 'ПРИЦЕП', 'ПРОГРАММА', 'ПРОЕКТ', 'ПРОКАТ', 'ПРОПЕЛЛЕР',
+        'ПРОТОКОЛ', 'ПРОЦЕСС', 'ПРОЦЕССОР', 'ПРУЖИНА', 'ПУЛЬТ', 'РАБОТА', 'РАДАР',
+        'РАДИАТОР', 'РАДИО', 'РАЗВЁРТКА', 'РАКЕТА', 'РАМА', 'РАСЧЁТ', 'РЕАКТОР',
+        'РЕГУЛЯТОР', 'РЕДУКТОР', 'РЕЗАК', 'РЕЗЕРВ', 'РЕЗИНА', 'РЕЗЬБА', 'РЕЛЕ',
+        'РЕМЕНЬ', 'РЕМОНТ', 'РЕСУРС', 'РЕШЕНИЕ', 'РОБОТ', 'РУБКА', 'РУЛЬ', 'РЫЧАГ',
+        'САМОЛЁТ', 'СВАРКА', 'СВЕТ', 'СВЕТОФОР', 'СВЯЗЬ', 'СЕКЦИЯ', 'СЕНСОР', 'СЕРВЕР',
+        'СЕТЬ', 'СИГНАЛ', 'СИЛОВОЙ', 'СИСТЕМА', 'СКАНЕР', 'СЛОЙ', 'СОЕДИНЕНИЕ', 'СОЛЕНОИД',
+        'СОПЛО', 'СПУТНИК', 'СРЕДСТВО', 'СТАЛЬ', 'СТАНЦИЯ', 'СТАРТЕР', 'СТАТИСТИКА',
+        'СТАТОР', 'СТЕНД', 'СТЕНКА', 'СТОЙКА', 'СТОЛ', 'СТРЕЛА', 'СТРЕЛКА', 'СТРОКА',
+        'СТРУКТУРА', 'СТЫК', 'СХЕМА', 'ТАБЛО', 'ТАКТ', 'ТАНК', 'ТЕЛЕВИЗОР', 'ТЕЛЕГРАФ',
+        'ТЕЛЕФОН', 'ТЕМПЕРАТУРА', 'ТЕОРИЯ', 'ТЕРМИНАЛ', 'ТЕХНИКА', 'ТЕХНОЛОГИЯ', 'ТИГЕЛЬ',
+        'ТОКАРЬ', 'ТОПЛИВО', 'ТОРМОЗ', 'ТРАКТОР', 'ТРАНСФОРМАТОР', 'ТРАНСПОРТ', 'ТРАССА',
+        'ТРЕНИРОВКА', 'ТРЕНАЖЁР', 'ТРИБУНА', 'ТРОС', 'ТУРБИНА', 'ТУШЕНИЕ', 'УГОЛ',
+        'УДАР', 'УЗЕЛ', 'УКАЗАТЕЛЬ', 'УПРАВЛЕНИЕ', 'УРОВЕНЬ', 'УСКОРЕНИЕ', 'УСТАНОВКА',
+        'УСТРОЙСТВО', 'ФАКТОР', 'ФАРА', 'ФИКСАЦИЯ', 'ФИЛЬТР', 'ФИНИШ', 'ФИШКА',
+        'ФЛАНЕЦ', 'ФОНАРЬ', 'ФОРМА', 'ФОРМУЛА', 'ФОРСУНКА', 'ФОТОН', 'ФРЕЗА', 'ФУНДАМЕНТ',
+        'ФУНКЦИЯ', 'ХВОСТ', 'ХОД', 'ХОМУТ', 'ХРАНЕНИЕ', 'ЦЕЛЬ', 'ЦЕНТР', 'ЦИКЛ',
+        'ЦИЛИНДР', 'ЧАСТЬ', 'ЧЕРТЁЖ', 'ЧИП', 'ШАБЛОН', 'ШАССИ', 'ШАТЁР', 'ШЕСТЕРНЯ',
+        'ШИНА', 'ШКАФ', 'ШЛАНГ', 'ШНУР', 'ШПИНДЕЛЬ', 'ШТАНГА', 'ШТАТИВ', 'ШТУЦЕР',
+        'ШУРУП', 'ЩЁТКА', 'ЩИТ', 'ЭКРАН', 'ЭКСПЕРИМЕНТ', 'ЭКСПЛУАТАЦИЯ', 'ЭКСТРУДЕР',
+        'ЭЛЕКТРИЧЕСТВО', 'ЭЛЕКТРОД', 'ЭЛЕКТРОН', 'ЭЛЕМЕНТ', 'ЭЛЕВАТОР', 'ЭМУЛЯТОР',
+        'ЭНЕРГИЯ', 'ЭФФЕКТ', 'ЮСТИРОВКА', 'ЯДРО', 'ЯЩИК',
+
+        // ГОРОДА И СТРАНЫ (100+ слов)
+        'АБИДЖАН', 'АБУ ДАБИ', 'АБХАЗИЯ', 'АВСТРАЛИЯ', 'АВСТРИЯ', 'АДЕН', 'АЗЕРБАЙДЖАН',
+        'АККРА', 'АКСУМ', 'АКТАУ', 'АЛБАНИЯ', 'АЛЖИР', 'АЛМАТЫ', 'АММАН', 'АМСТЕРДАМ',
+        'АНГОЛА', 'АНДАЛУСИЯ', 'АНДОРРА', 'АНКАРА', 'АНТАЛИЯ', 'АНТВЕРПЕН', 'АОМЫНЬ',
+        'АПИА', 'АРГЕНТИНА', 'АРМЕНИЯ', 'АРХАНГЕЛЬСК', 'АСУНСЬОН', 'АФИНЫ', 'АФРИКА',
+        'АШХАБАД', 'БАГДАД', 'БАКУ', 'БАНГКОК', 'БАНГЛАДЕШ', 'БАНСКА БИСТРИЦА', 'БАРБАДОС',
+        'БАРСЕЛОНА', 'БАТУМИ', 'БЕЙРУт', 'БЕЛАРУСЬ', 'БЕЛГРАД', 'БЕЛИЗ', 'БЕЛЬГИЯ',
+        'БЕРЛИН', 'БЕРН', 'БИЛЬБАО', 'БИШКЕК', 'БОЛИВИЯ', 'БОЛОНЬЯ', 'БОЛГАРИЯ',
+        'БОСНИЯ', 'БРАЗИЛИЯ', 'БРАТИСЛАВА', 'БРИССЕЛЬ', 'БРЮССЕЛЬ', 'БУДАПЕШТ', 'БУКИНГЕМ',
+        'БУРУНДИ', 'БУХАРЕСТ', 'ВАДУЦ', 'ВАЛЕНСИЯ', 'ВАЛЛЕТТА', 'ВАРШАВА', 'ВАТИКАН',
+        'ВЕНА', 'ВЕНЕЦИЯ', 'ВЕНГРИЯ', 'ВЕЛИКОБРИТАНИЯ', 'ВЕНЕСУЭЛА', 'ВЕРСАЛЬ', 'ВИКТОРИЯ',
+        'ВИЛЬНЮС', 'ВИНДХУК', 'ВЛАДИВОСТОК', 'ВЛАДИКАВКАЗ', 'ВОЛГОГРАД', 'ВОРОНЕЖ', 'ВЬЕТНАМ',
+        'ГАБОРОНЕ', 'ГАВАЙИ', 'ГАВАНА', 'ГАГРА', 'ГАИТИ', 'ГАЛИФАКС', 'ГАМБИЯ', 'ГАМБУРГ',
+        'ГАНА', 'ГВАДАЛАХАРА', 'ГВАТЕМАЛА', 'ГДАНЬСК', 'ГЕЛЬСИНКИ', 'ГЕНУЯ', 'ГЕРМАНИЯ',
+        'ГИБРАЛТАР', 'ГОА', 'ГОНДУРАС', 'ГОНКОНГ', 'ГОРОД', 'ГОСУДАРСТВО', 'ГОТЕБОРГ',
+        'ГРАНАДА', 'ГРЕЦИЯ', 'ГРУЗИЯ', 'ГУАНЧЖОУ', 'ДАКАР', 'ДАЛЛАС', 'ДАМАСК', 'ДАНИЯ',
+        'ДАР ЭС САЛАМ', 'ДЕЛИ', 'ДЖАКАРТА', 'ДЖИБУТИ', 'ДИЖОН', 'ДНЕПР', 'ДНЕПРОПЕТРОВСК',
+        'ДОМИНИКАНА', 'ДОХА', 'ДРЕЗДЕН', 'ДУБАЙ', 'ДУБЛИН', 'ДУШАНБЕ', 'ЕВРОПА', 'ЕГИПЕТ',
+        'ЕКАТЕРИНБУРГ', 'ЕРЕВАН', 'ЖЕНЕВА', 'ЖИРОНА', 'ЗАГРЕБ', 'ЗАМБИЯ', 'ЗАПОРОЖЬЕ',
+        'ЗИМБАБВЕ', 'ИЕРУСАЛИМ', 'ИЖЕВСК', 'ИНДИЯ', 'ИНДОНЕЗИЯ', 'ИОРДАНИЯ', 'ИРАК',
+        'ИРАН', 'ИРЛАНДИЯ', 'ИСЛАНДИЯ', 'ИСПАНИЯ', 'ИТАЛИЯ', 'ЙЕМЕН', 'ЙОХАННЕСБУРГ',
+        'КАБУЛ', 'КАЗАКСТАН', 'КАЗАНЬ', 'КАИР', 'КАЛИНИНГРАД', 'КАЛИНИН', 'КАЛУГА',
+        'КАМБОДЖА', 'КАМЕРУН', 'КАМАДА', 'КАМБЕРРА', 'КАНКУН', 'КАРАГАНДА', 'КАРАКАС',
+        'КАРАЧИ', 'КАРЕЛИЯ', 'КАРЛОВЫ ВАРЫ', 'КАТАР', 'КЕЙПТАУН', 'КЕМЕРОВО', 'КЕНИЯ',
+        'КЕРЧЬ', 'КИЕВ', 'КИЛИМАНДЖАРО', 'КИНШАСА', 'КИПР', 'КИРГИЗИЯ', 'КИРОВ',
+        'КИСЛОВОДСК', 'КИТАЙ', 'КЛАЙПЕДА', 'КОЛОМБО', 'КОЛУМБИЯ', 'КОМОРЫ', 'КОНГО',
+        'КОПЕНГАГЕН', 'КОРЕЯ', 'КОСТА РИКА', 'КОТ ДИВУАР', 'КРАКОВ', 'КРАСНОДАР',
+        'КРАСНОЯРСК', 'КРИВОЙ РОГ', 'КРОАТИЯ', 'КУБА', 'КУВЕЙТ', 'КУРСК', 'КЫРГЫЗСТАН',
+        'ЛАС ВЕГАС', 'ЛАТВИЯ', 'ЛЕЙПЦИГ', 'ЛИБЕРИЯ', 'ЛИВАН', 'ЛИВЕРПУЛЬ', 'ЛИССАБОН',
+        'ЛИТВА', 'ЛИХТЕНШТЕЙН', 'ЛОНДОН', 'ЛОС АНДЖЕЛЕС', 'ЛУАНДА', 'ЛУБЛЯНА', 'ЛЬВОВ',
+        'ЛЮКСЕМБУРГ', 'МАДАГАСКАР', 'МАДРИД', 'МАЙАМИ', 'МАЙКОП', 'МАКАО', 'МАКЕДОНИЯ',
+        'МАЛАБО', 'МАЛАЙЗИЯ', 'МАЛИ', 'МАЛЬДИВЫ', 'МАЛЬТА', 'МАНАГУА', 'МАНАМА',
+        'МАНЧЕСТЕР', 'МАРСЕЛЬ', 'МЕККА', 'МЕКСИКА', 'МЕЛЬБУРН', 'МЕХИКО', 'МИЛАН',
+        'МИНСК', 'МОГАДИШУ', 'МОЛДАВИЯ', 'МОНАКО', 'МОНГОЛИЯ', 'МОНРЕАЛЬ', 'МОНТЕВИДЕО',
+        'МОНТЕНЕГРО', 'МОСКВА', 'МУКАЧЕВО', 'МУРМАНСК', 'МЬЯНМА', 'НАГОЯ', 'НАЙРОБИ',
+        'НАМИБИЯ', 'НЕАПОЛЬ', 'НИГЕРИЯ', 'НИДЕРЛАНДЫ', 'НИКОСИЯ', 'НОВГОРОД',
+        'НОВОСИБИРСК', 'НОРВЕГИЯ', 'НОРИЛЬСК', 'НЬЮ ЙОРК', 'ОАЭ', 'ОДЕССА', 'ОМАН',
+        'ОМСК', 'ОСЛО', 'ОТТАВА', 'ПАКИСТАН', 'ПАЛЕРМО', 'ПАНАМА', 'ПАРИЖ', 'ПЕКИН',
+        'ПЕРМЬ', 'ПЕРУ', 'ПЕТРОПАВЛОВСК', 'ПИЗА', 'ПИТСБУРГ', 'ПЛОВДИВ', 'ПОДГОРИЦА',
+        'ПОЛЬША', 'ПОРТУГАЛИЯ', 'ПРАГА', 'ПРИШТИНА', 'ПСКОВ', 'ПХЕНЬЯН', 'РАБАТ',
+        'РЕЙКЬЯВИК', 'РИГА', 'РИМ', 'РИО ДЕ ЖАНЕЙРО', 'РИЯД', 'РОСТОВ', 'РУМЫНИЯ',
+        'САМАРА', 'САН МАРИНО', 'САНТЬЯГО', 'САН ФРАНЦИСКО', 'САРАЕВО', 'САРАНСК',
+        'САРАТОВ', 'САУДОВСКАЯ АРАВИЯ', 'СЕВАСТОПОЛЬ', 'СЕУЛ', 'СИБИРЬ', 'СИДНЕЙ',
+        'СИНГАПУР', 'СИРИЯ', 'СКОПЬЕ', 'СЛАВОНИЯ', 'СЛОВАКИЯ', 'СЛОВЕНИЯ', 'СМОЛЕНСК',
+        'СОФИЯ', 'СОЧИ', 'СТАМБУЛ', 'СТОКГОЛЬМ', 'СУХУМ', 'США', 'СЫКТЫВКАР',
+        'ТАДЖИКИСТАН', 'ТАЙБЭЙ', 'ТАЙЛАНД', 'ТАЛЛИН', 'ТАМБОВ', 'ТАНЗАНИЯ', 'ТАШКЕНТ',
+        'ТВЕРЬ', 'ТЕГЕРАН', 'ТЕЛЬ АВИВ', 'ТОКИО', 'ТОМСК', 'ТОРОНТО', 'ТРИПОЛИ',
+        'ТУЛА', 'ТУНИС', 'ТУРЦИЯ', 'ТЮМЕНЬ', 'УАГАДУГУ', 'УГАНДА', 'УДМУРТИЯ',
+        'УЖГОРОД', 'УЗБЕКИСТАН', 'УКРАИНА', 'УЛАН БАТОР', 'УЛЬЯНОВСК', 'УФА',
+        'ФИЛАДЕЛЬФИЯ', 'ФИЛИППИНЫ', 'ФИНЛЯНДИЯ', 'ФЛОРИДА', 'ФРАНКФУРТ', 'ФРАНЦИЯ',
+        'ХАБАРОВСК', 'ХАЙФА', 'ХАРБИН', 'ХАРЬКОВ', 'ХЕРСОН', 'ХОККАЙДО', 'ХОРВАТИЯ',
+        'ЦЮРИХ', 'ЧЕЛЯБИНСК', 'ЧЕРНИГОВ', 'ЧЕРНОГОРИЯ', 'ЧЕХИЯ', 'ЧИКАГО', 'ЧИТА',
+        'ШАНХАЙ', 'ШВЕЙЦАРИЯ', 'ШВЕЦИЯ', 'ШТУТГАРТ', 'ШЭНЬЯН', 'ЭДИНБУРГ', 'ЭКВАТОР',
+        'ЭЛЬ КУВЕЙТ', 'ЭРИВАН', 'ЭСТОНИЯ', 'ЮАР', 'ЮЖНАЯ КОРЕЯ', 'ЯКУТСК', 'ЯПОНИЯ',
+        'ЯРОСЛАВЛЬ'
+    ];
+
+    // ГЕНЕРАЦИЯ ID ИГРОКА
+    function generatePlayerId() {
+        return 'player_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+
+    // ГЕНЕРАЦИЯ КОДА КОМНАТЫ
+    function generateRoomCode() {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let code = '';
+        for (let i = 0; i < 6; i++) {
+            code += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return code;
+    }
+
+    // СОХРАНЕНИЕ СОСТОЯНИЯ ИГРЫ
+    function saveGameState() {
+        const stateToSave = {
+            cards: gameState.cards,
+            blueScore: gameState.blueScore,
+            redScore: gameState.redScore,
+            blueCardsRemaining: gameState.blueCardsRemaining,
+            redCardsRemaining: gameState.redCardsRemaining,
+            currentTeam: gameState.currentTeam,
+            currentHint: gameState.currentHint,
+            gameOver: gameState.gameOver,
+            players: gameState.players,
+            hintsHistory: gameState.hintsHistory,
+            chatHistory: gameState.chatHistory,
+            timeLeft: gameState.timeLeft,
+            timerRunning: gameState.timerRunning,
+            masterTimeLeft: gameState.masterTimeLeft,
+            masterTimerRunning: gameState.masterTimerRunning,
+            gameNumber: gameState.gameNumber,
+            cardsBlocked: gameState.cardsBlocked
+        };
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
+    }
+
+    // СОХРАНЕНИЕ СОСТОЯНИЯ ЛОББИ
+    function saveLobbyState() {
+        localStorage.setItem(ROOM_CODE_KEY, roomCode);
+        localStorage.setItem(ROOM_CREATOR_KEY, isRoomCreator.toString());
+        localStorage.setItem(LOBBY_PLAYERS_KEY, JSON.stringify(lobbyPlayers));
+    }
+
+    // ЗАГРУЗКА СОСТОЯНИЯ ИГРЫ
+    function loadGameState() {
+        const savedState = localStorage.getItem(STORAGE_KEY);
+        if (!savedState) return null;
+
+        try {
+            return JSON.parse(savedState);
+        } catch (e) {
+            console.error('Ошибка загрузки сохраненной игры:', e);
+            return null;
+        }
+    }
+
+    // ЗАГРУЗКА СОСТОЯНИЯ ЛОББИ
+    function loadLobbyState() {
+        const savedCode = localStorage.getItem(ROOM_CODE_KEY);
+        const savedCreator = localStorage.getItem(ROOM_CREATOR_KEY);
+        const savedPlayers = localStorage.getItem(LOBBY_PLAYERS_KEY);
+
+        if (savedCode) roomCode = savedCode;
+        if (savedCreator) isRoomCreator = savedCreator === 'true';
+        if (savedPlayers) {
+            try {
+                lobbyPlayers = JSON.parse(savedPlayers);
+            } catch (e) {
+                lobbyPlayers = [];
+            }
+        }
+    }
+
+    // СОХРАНЕНИЕ ИМЕНИ ИГРОКА
+    function savePlayerName(name) {
+        localStorage.setItem(PLAYER_NAME_KEY, name);
+    }
+
+    // ЗАГРУЗКА ИМЕНИ ИГРОКА
+    function loadPlayerName() {
+        return localStorage.getItem(PLAYER_NAME_KEY) || '';
+    }
+
+    // СОЗДАНИЕ КОМНАТЫ
+    function createRoom() {
+        roomCode = generateRoomCode();
+        isRoomCreator = true;
+        lobbyPlayers = [{
+            id: gameState.playerId,
+            name: gameState.playerName || 'Игрок',
+            isCreator: true
+        }];
+
+        saveLobbyState();
+        showLobby();
+    }
+
+    // ПРИСОЕДИНЕНИЕ К КОМНАТЕ
+    function joinRoom(code) {
+        roomCode = code.toUpperCase();
+        isRoomCreator = false;
+
+        // В реальном приложении здесь было бы подключение к серверу
+        // Для демо просто добавляем игрока в лобби
+        if (!gameState.playerName || gameState.playerName.trim() === '') {
+            alert('Пожалуйста, введите ваше имя перед присоединением к комнате');
+            return;
+        }
+
+        lobbyPlayers.push({
+            id: gameState.playerId,
+            name: gameState.playerName || 'Игрок',
+            isCreator: false
+        });
+
+        saveLobbyState();
+        showLobby();
+    }
+
+    // ПОКАЗАТЬ ЛОББИ
+    function showLobby() {
+        document.getElementById('game-code-display').textContent = roomCode;
+        document.getElementById('game-lobby').style.display = 'block';
+        document.getElementById('code-input-section').classList.remove('active');
+
+        updateLobbyPlayersList();
+
+        if (isRoomCreator) {
+            document.getElementById('start-game-btn').style.display = 'block';
+        } else {
+            document.getElementById('start-game-btn').style.display = 'none';
+        }
+    }
+
+    // ОБНОВЛЕНИЕ СПИСКА ИГРОКОВ В ЛОББИ
+    function updateLobbyPlayersList() {
+        const list = document.getElementById('lobby-players-list');
+        list.innerHTML = '';
+
+        lobbyPlayers.forEach(player => {
+            const playerElement = document.createElement('div');
+            playerElement.className = 'player-waiting';
+            playerElement.innerHTML = `
+                <div class="player-info">
+                    <i class="fas fa-user${player.isCreator ? '-shield' : ''}"></i>
+                    <span class="player-name">${player.name}</span>
+                    ${player.isCreator ? '<span style="color: #9b59b6; font-size: 0.8rem;">(Создатель)</span>' : ''}
+                </div>
+                ${isRoomCreator && !player.isCreator ?
+                `<button class="kick-btn" onclick="kickPlayer('${player.id}')">
+                        <i class="fas fa-times"></i>
+                    </button>` :
+                ''
+            }
+            `;
+            list.appendChild(playerElement);
+        });
+    }
+
+    // УДАЛЕНИЕ ИГРОКА ИЗ ЛОББИ
+    function kickPlayer(playerId) {
+        if (!isRoomCreator) return;
+
+        lobbyPlayers = lobbyPlayers.filter(p => p.id !== playerId);
+        updateLobbyPlayersList();
+        saveLobbyState();
+    }
+
+    // НАЧАЛО ИГРЫ
+    function startGame() {
+        if (!isRoomCreator) return;
+
+        // Плавный переход в игру
+        document.getElementById('lobby-modal').classList.add('transitioning');
+
+        setTimeout(() => {
+            document.getElementById('lobby-modal').style.display = 'none';
+            document.getElementById('game-container').style.display = 'block';
+
+            // Показать бейдж создателя комнаты
+            if (isRoomCreator) {
+                document.getElementById('room-creator-badge').style.display = 'block';
+            }
+
+            // Инициализировать игру
+            initGame(false);
+
+            // Добавить приветственное сообщение
+            addSystemMessage(`🎮 Игра началась! Код комнаты: ${roomCode}`);
+
+            // Если создатель комнаты - автоматически сделать мастером
+            if (isRoomCreator && !gameState.playerTeam) {
+                setTimeout(() => {
+                    joinTeam('blue');
+                    setTimeout(() => {
+                        becomeMaster();
+                    }, 500);
+                }, 1000);
+            }
+        }, 500);
+    }
+
+    // ПАУЗА ИГРЫ
+    function togglePauseGame() {
+        if (!isRoomCreator) return;
+
+        gamePaused = !gamePaused;
+
+        if (gamePaused) {
+            // Остановить таймеры
+            if (gameState.timer) {
+                clearInterval(gameState.timer);
+                gameState.timerRunning = false;
+            }
+            if (gameState.masterTimer) {
+                clearInterval(gameState.masterTimer);
+                gameState.masterTimerRunning = false;
+            }
+
+            // Показать оверлей паузы
+            document.getElementById('game-paused-overlay').classList.add('active');
+            addSystemMessage('⏸️ Игра приостановлена создателем комнаты');
+        } else {
+            // Скрыть оверлей паузы
+            document.getElementById('game-paused-overlay').classList.remove('active');
+
+            // Запустить таймеры, если они были активны
+            if (gameState.timeLeft > 0) {
+                startTimer(gameState.timeLeft);
+            }
+            if (gameState.masterTimeLeft > 0) {
+                startMasterTimer(gameState.masterTimeLeft);
+            }
+
+            addSystemMessage('▶️ Игра возобновлена');
+        }
+    }
+
+    // ПЕРЕМЕШИВАНИЕ КОМАНД
+    function shuffleTeams() {
+        if (!isRoomCreator) return;
+
+        const allPlayers = [...gameState.players.blue, ...gameState.players.red];
+        const shuffledPlayers = [...allPlayers].sort(() => Math.random() - 0.5);
+
+        // Разделить пополам
+        const half = Math.ceil(shuffledPlayers.length / 2);
+        gameState.players.blue = shuffledPlayers.slice(0, half);
+        gameState.players.red = shuffledPlayers.slice(half);
+
+        // Обновить команды игроков
+        gameState.players.blue.forEach(p => p.team = 'blue');
+        gameState.players.red.forEach(p => p.team = 'red');
+
+        // Если текущий игрок был перемешан, обновить его команду
+        const currentPlayer = shuffledPlayers.find(p => p.id === gameState.playerId);
+        if (currentPlayer) {
+            gameState.playerTeam = currentPlayer.team;
+        }
+
+        updatePlayersList();
+        updateUIForRole();
+        addSystemMessage('🔀 Команды перемешаны создателем комнаты');
+    }
+
+    // ЗАВЕРШЕНИЕ ИГРЫ ДОСРОЧНО
+    function endGameEarly() {
+        if (!isRoomCreator) return;
+
+        if (confirm('Завершить игру досрочно? Победитель будет выбран случайно.')) {
+            const winner = Math.random() > 0.5 ? 'blue' : 'red';
+            endGame(winner);
+            addSystemMessage('🏁 Игра завершена создателем комнаты');
+        }
+    }
+
+    // СБРОС ИГРЫ
+    function resetGame() {
+        if (!isRoomCreator) return;
+
+        if (confirm('Сбросить игру? Все прогресс будет потерян.')) {
+            localStorage.removeItem(STORAGE_KEY);
+            gameState.playerTeam = null;
+            gameState.playerRole = 'agent';
+            initGame(false);
+            addSystemMessage('🔄 Игра сброшена создателем комнаты');
+        }
+    }
+
+    // ИНИЦИАЛИЗАЦИЯ НОВОЙ ИГРЫ (после завершения предыдущей)
+    function initNewGame() {
+        const currentPlayers = {...gameState.players};
+        const currentChatHistory = [...gameState.chatHistory];
+        const currentGameNumber = gameState.gameNumber + 1;
+
+        const shuffledWords = [...wordList].sort(() => Math.random() - 0.5).slice(0, 25);
+        const cardTypes = [];
+
+        const blueStarts = currentGameNumber % 2 === 1;
+
+        if (blueStarts) {
+            for (let i = 0; i < 9; i++) cardTypes.push('blue');
+            for (let i = 0; i < 8; i++) cardTypes.push('red');
+        } else {
+            for (let i = 0; i < 8; i++) cardTypes.push('blue');
+            for (let i = 0; i < 9; i++) cardTypes.push('red');
+        }
+
+        for (let i = 0; i < 7; i++) cardTypes.push('neutral');
+        cardTypes.push('assassin');
+
+        const shuffledTypes = cardTypes.sort(() => Math.random() - 0.5);
+
+        gameState.cards = shuffledWords.map((word, index) => {
+            return {
+                word: word,
+                type: shuffledTypes[index],
+                revealed: false,
+                id: index,
+                hintMarked: false,
+                hintTeam: null
+            };
+        });
+
+        gameState.blueCardsRemaining = gameState.cards.filter(card => card.type === 'blue').length;
+        gameState.redCardsRemaining = gameState.cards.filter(card => card.type === 'red').length;
+        gameState.blueScore = 0;
+        gameState.redScore = 0;
+        gameState.currentTeam = blueStarts ? 'blue' : 'red';
+        gameState.currentHint = null;
+        gameState.gameOver = false;
+        gameState.hintsHistory = [];
+        gameState.gameNumber = currentGameNumber;
+
+        // Блокируем карточки в начале новой игры
+        gameState.cardsBlocked = true;
+
+        gameState.players = { blue: [], red: [] };
+
+        Object.keys(currentPlayers).forEach(team => {
+            currentPlayers[team].forEach(player => {
+                gameState.players[team].push({
+                    ...player,
+                    role: 'agent'
+                });
+            });
+        });
+
+        const gameStartMessage = {
+            sender: 'system',
+            message: `🚀 Игра #${currentGameNumber} началась! Первыми ходят ${blueStarts ? 'синие' : 'красные'}. Карточки заблокированы до подсказки мастера!`,
+            timestamp: new Date().toLocaleTimeString(),
+            team: null,
+            type: 'game-start'
+        };
+
+        gameState.chatHistory = [...currentChatHistory, gameStartMessage];
+
+        if (gameState.timer) {
+            clearInterval(gameState.timer);
+        }
+        if (gameState.masterTimer) {
+            clearInterval(gameState.masterTimer);
+        }
+        gameState.timeLeft = 0;
+        gameState.timerRunning = false;
+        gameState.masterTimeLeft = 0;
+        gameState.masterTimerRunning = false;
+
+        updateGameBoard();
+        updateScore();
+        updateTurnIndicator();
+        updatePlayersList();
+        updateHintHistory();
+        restoreChatHistory();
+        updateMasterTimerDisplay();
+        updateMobileChatMessages();
+
+        document.getElementById('winner-celebration').classList.remove('active');
+
+        if (gameState.playerRole === 'master') {
+            document.getElementById('hint-controls').style.display = 'block';
+        } else {
+            document.getElementById('hint-controls').style.display = 'none';
+        }
+
+        saveGameState();
+
+        addSystemMessage(`🚀 Игра #${currentGameNumber} началась! Первыми ходят ${blueStarts ? 'синие' : 'красные'}. Карточки заблокированы до подсказки мастера!`);
+    }
+
+    // ИНИЦИАЛИЗАЦИЯ ИГРЫ (при загрузке страницы)
+    function initGame(restore = false) {
+        let savedState = null;
+
+        if (restore) {
+            savedState = loadGameState();
+        }
+
+        if (savedState && restore) {
+            gameState.cards = savedState.cards;
+            gameState.blueScore = savedState.blueScore;
+            gameState.redScore = savedState.redScore;
+            gameState.blueCardsRemaining = savedState.blueCardsRemaining;
+            gameState.redCardsRemaining = savedState.redCardsRemaining;
+            gameState.currentTeam = savedState.currentTeam;
+            gameState.currentHint = savedState.currentHint;
+            gameState.gameOver = savedState.gameOver;
+            gameState.players = savedState.players;
+            gameState.hintsHistory = savedState.hintsHistory || [];
+            gameState.chatHistory = savedState.chatHistory || [];
+            gameState.timeLeft = savedState.timeLeft || 0;
+            gameState.timerRunning = savedState.timerRunning || false;
+            gameState.masterTimeLeft = savedState.masterTimeLeft || 0;
+            gameState.masterTimerRunning = savedState.masterTimerRunning || false;
+            gameState.gameNumber = savedState.gameNumber || 1;
+            gameState.cardsBlocked = savedState.cardsBlocked !== undefined ? savedState.cardsBlocked : true;
+
+            const playerInGame = Object.values(gameState.players).flat().find(p => p.id === gameState.playerId);
+            if (playerInGame) {
+                gameState.playerTeam = playerInGame.team;
+                gameState.playerRole = playerInGame.role;
+            }
+
+            restoreChatHistory();
+            updateMobileChatMessages();
+
+            addSystemMessage('Игра восстановлена из сохранения!');
+        } else {
+            const shuffledWords = [...wordList].sort(() => Math.random() - 0.5).slice(0, 25);
+            const cardTypes = [];
+
+            const blueStarts = Math.random() > 0.5;
+
+            if (blueStarts) {
+                for (let i = 0; i < 9; i++) cardTypes.push('blue');
+                for (let i = 0; i < 8; i++) cardTypes.push('red');
+            } else {
+                for (let i = 0; i < 8; i++) cardTypes.push('blue');
+                for (let i = 0; i < 9; i++) cardTypes.push('red');
+            }
+
+            for (let i = 0; i < 7; i++) cardTypes.push('neutral');
+            cardTypes.push('assassin');
+
+            const shuffledTypes = cardTypes.sort(() => Math.random() - 0.5);
+            gameState.currentTeam = blueStarts ? 'blue' : 'red';
+
+            gameState.cards = shuffledWords.map((word, index) => {
+                return {
+                    word: word,
+                    type: shuffledTypes[index],
+                    revealed: false,
+                    id: index,
+                    hintMarked: false,
+                    hintTeam: null
+                };
+            });
+
+            gameState.blueCardsRemaining = gameState.cards.filter(card => card.type === 'blue').length;
+            gameState.redCardsRemaining = gameState.cards.filter(card => card.type === 'red').length;
+            gameState.blueScore = 0;
+            gameState.redScore = 0;
+            gameState.currentHint = null;
+            gameState.gameOver = false;
+            gameState.hintsHistory = [];
+            gameState.chatHistory = [];
+            gameState.players = { blue: [], red: [] };
+            gameState.gameNumber = 1;
+            gameState.cardsBlocked = true;
+
+            addSystemMessage('Новая игра началась! Карточки заблокированы до подсказки мастера!');
+        }
+
+        if (gameState.timer) {
+            clearInterval(gameState.timer);
+        }
+        if (gameState.masterTimer) {
+            clearInterval(gameState.masterTimer);
+        }
+
+        if (gameState.timerRunning && gameState.timeLeft > 0) {
+            startTimer(gameState.timeLeft);
+        } else {
+            gameState.timeLeft = 0;
+            gameState.timerRunning = false;
+        }
+
+        if (gameState.masterTimerRunning && gameState.masterTimeLeft > 0) {
+            startMasterTimer(gameState.masterTimeLeft);
+        } else {
+            gameState.masterTimeLeft = 0;
+            gameState.masterTimerRunning = false;
+        }
+
+        updateGameBoard();
+        updateScore();
+        updateTurnIndicator();
+        updatePlayersList();
+        updateHintHistory();
+        restoreChatHistory();
+        updateMasterTimerDisplay();
+        updateMobileChatMessages();
+
+        updateUIForRole();
+
+        saveGameState();
+    }
+
+    // ОБНОВЛЕНИЕ UI В ЗАВИСИМОСТИ ОТ РОЛИ ИГРОКА
+    function updateUIForRole() {
+        if (gameState.playerRole === 'master') {
+            document.getElementById('hint-controls').style.display = 'block';
+            document.getElementById('master-timer').style.display = 'block';
+            updateMasterTimerDisplay();
+        } else {
+            document.getElementById('hint-controls').style.display = 'none';
+            document.getElementById('master-timer').style.display = 'none';
+        }
+
+        updatePlayerRoleInfo();
+    }
+
+    // ОБНОВЛЕНИЕ ИГРОВОГО ПОЛЯ С УЧЕТОМ БЛОКИРОВКИ
+    function updateGameBoard() {
+        const container = document.getElementById('cards-container');
+        container.innerHTML = '';
+
+        gameState.cards.forEach(card => {
+            const cardElement = document.createElement('div');
+
+            if (gameState.playerRole === 'master' && !card.revealed) {
+                cardElement.className = `card ${card.type} master-view`;
+            } else {
+                cardElement.className = `card ${card.revealed ? card.type : 'word'}`;
+            }
+
+            if (card.hintMarked && !card.revealed && gameState.playerRole !== 'master') {
+                cardElement.classList.add(`${card.hintTeam}-hint`);
+            }
+
+            if (card.revealed) {
+                cardElement.classList.add('selected');
+            }
+
+            // Блокируем карточки если:
+            // 1. Игра завершена
+            // 2. Игрок не присоединился к команде
+            // 3. Игрок не в команде, которая сейчас ходит
+            // 4. Игрок - мастер
+            // 5. Карточки заблокированы до подсказки мастера
+            const shouldBeDisabled =
+                gameState.gameOver ||
+                !gameState.playerTeam ||
+                gameState.playerTeam !== gameState.currentTeam ||
+                gameState.playerRole === 'master' ||
+                (gameState.cardsBlocked && !gameState.currentHint);
+
+            if (shouldBeDisabled) {
+                cardElement.classList.add('disabled');
+            }
+
+            // Добавляем класс blocked для визуального отображения
+            if (gameState.cardsBlocked && !gameState.currentHint && !gameState.gameOver && gameState.playerTeam && gameState.playerTeam === gameState.currentTeam && gameState.playerRole !== 'master') {
+                cardElement.classList.add('blocked');
+            }
+
+            const wordSpan = document.createElement('div');
+            wordSpan.className = 'word';
+            wordSpan.textContent = card.word;
+            cardElement.appendChild(wordSpan);
+
+            if (card.hintMarked && !card.revealed && gameState.playerRole !== 'master') {
+                const hintIndicator = document.createElement('div');
+                hintIndicator.className = 'hint-indicator';
+                hintIndicator.textContent = gameState.currentHint ? gameState.currentHint.number : '?';
+                cardElement.appendChild(hintIndicator);
+            }
+
+            cardElement.dataset.id = card.id;
+            cardElement.addEventListener('click', () => selectCard(card.id));
+            container.appendChild(cardElement);
+        });
+
+        saveGameState();
+    }
+
+    // ОБНОВЛЕНИЕ СПИСКА ИГРОКОВ
+    function updatePlayersList() {
+        const bluePlayers = document.getElementById('blue-players');
+        const redPlayers = document.getElementById('red-players');
+
+        bluePlayers.innerHTML = '';
+        redPlayers.innerHTML = '';
+
+        gameState.players.blue.forEach(player => {
+            const playerElement = document.createElement('div');
+            playerElement.className = `player ${player.role === 'master' ? 'master' : ''} ${player.id === gameState.playerId ? 'me' : ''}`;
+            playerElement.textContent = player.name;
+            bluePlayers.appendChild(playerElement);
+        });
+
+        gameState.players.red.forEach(player => {
+            const playerElement = document.createElement('div');
+            playerElement.className = `player ${player.role === 'master' ? 'master' : ''} ${player.id === gameState.playerId ? 'me' : ''}`;
+            playerElement.textContent = player.name;
+            redPlayers.appendChild(playerElement);
+        });
+
+        saveGameState();
+    }
+
+    // ОБРАБОТКА ВЫБОРА КАРТОЧКИ С ПРОВЕРКОЙ БЛОКИРОВКИ
+    function selectCard(cardId) {
+        if (gameState.gameOver) return;
+        if (!gameState.playerTeam || gameState.playerTeam !== gameState.currentTeam || gameState.playerRole === 'master') return;
+
+        // Проверяем, заблокированы ли карточки
+        if (gameState.cardsBlocked && !gameState.currentHint) {
+            addSystemMessage('Карточки заблокированы! Дождитесь подсказки мастера.');
+            return;
+        }
+
+        const card = gameState.cards.find(c => c.id === cardId);
+        if (card.revealed) return;
+
+        card.revealed = true;
+
+        const message = `${gameState.playerName} выбрал(а) слово "${card.word}"`;
+        addChatMessage(message, true);
+
+        switch(card.type) {
+            case 'blue':
+                gameState.blueScore++;
+                gameState.blueCardsRemaining--;
+                if (gameState.currentTeam === 'blue') {
+                    addSystemMessage('Синяя команда угадала своё слово!');
+                    if (gameState.blueCardsRemaining === 0) {
+                        endGame('blue');
+                        return;
+                    }
+                } else {
+                    addSystemMessage('Красная команда выбрала синее слово! Ход переходит синей команде.');
+                    switchTeam();
+                }
+                break;
+
+            case 'red':
+                gameState.redScore++;
+                gameState.redCardsRemaining--;
+                if (gameState.currentTeam === 'red') {
+                    addSystemMessage('Красная команда угадала своё слово!');
+                    if (gameState.redCardsRemaining === 0) {
+                        endGame('red');
+                        return;
+                    }
+                } else {
+                    addSystemMessage('Синяя команда выбрала красное слово! Ход переходит красной команде.');
+                    switchTeam();
+                }
+                break;
+
+            case 'neutral':
+                addSystemMessage('Выбрано нейтральное слово. Ход переходит другой команде.');
+                switchTeam();
+                break;
+
+            case 'assassin':
+                addSystemMessage(`Выбран убийца! ${gameState.currentTeam === 'blue' ? 'Красная' : 'Синяя'} команда побеждает.`);
+                endGame(gameState.currentTeam === 'blue' ? 'red' : 'blue');
+                return;
+        }
+
+        // Если команда угадала свое слово, продолжаем ход
+        // Если нет, сбрасываем подсказку и блокируем карточки
+        if ((gameState.currentTeam === 'blue' && card.type !== 'blue') ||
+            (gameState.currentTeam === 'red' && card.type !== 'red')) {
+            gameState.currentHint = null;
+            gameState.cardsBlocked = true;
+            document.getElementById('hint-text').textContent = '-';
+            document.getElementById('hint-count').textContent = '0';
+
+            gameState.cards.forEach(card => {
+                card.hintMarked = false;
+                card.hintTeam = null;
+            });
+        }
+
+        updateGameBoard();
+        updateScore();
+        updateTurnIndicator();
+    }
+
+    // КОНЕЦ ИГРЫ
+    function endGame(winningTeam) {
+        gameState.gameOver = true;
+
+        let message = '';
+        if (winningTeam === 'blue') {
+            message = '🎉 Победа синей команды! Все агенты найдены.';
+        } else {
+            message = '🎉 Победа красной команды! Все агенты найдены.';
+        }
+
+        addSystemMessage(message);
+        updateTurnIndicator();
+
+        gameState.cards.forEach(card => card.revealed = true);
+        updateGameBoard();
+
+        if (gameState.timer) {
+            clearInterval(gameState.timer);
+            gameState.timerRunning = false;
+            updateTimerDisplay();
+        }
+
+        if (gameState.masterTimer) {
+            clearInterval(gameState.masterTimer);
+            gameState.masterTimerRunning = false;
+            updateMasterTimerDisplay();
+        }
+
+        setTimeout(() => {
+            showWinnerCelebration(winningTeam);
+        }, 1000);
+
+        saveGameState();
+    }
+
+    // ПОКАЗАТЬ ПОЗДРАВЛЕНИЕ ПОБЕДИТЕЛЯ
+    function showWinnerCelebration(winningTeam) {
+        const celebration = document.getElementById('winner-celebration');
+        const winnerText = document.getElementById('winner-text');
+        const winnerSubtext = document.getElementById('winner-subtext');
+
+        if (winningTeam === 'blue') {
+            winnerText.textContent = 'ПОБЕДА СИНИХ!';
+            winnerText.className = 'winner-text blue';
+            winnerSubtext.textContent = `Синяя команда победила в игре #${gameState.gameNumber}!`;
+        } else {
+            winnerText.textContent = 'ПОБЕДА КРАСНЫХ!';
+            winnerText.className = 'winner-text red';
+            winnerSubtext.textContent = `Красная команда победила в игре #${gameState.gameNumber}!`;
+        }
+
+        celebration.classList.add('active');
+    }
+
+    // ПЕРЕКЛЮЧЕНИЕ ХОДА
+    function switchTeam() {
+        gameState.currentTeam = gameState.currentTeam === 'blue' ? 'red' : 'blue';
+        gameState.cardsBlocked = true;
+        gameState.currentHint = null;
+        updateTurnIndicator();
+        resetTimer();
+        resetMasterTimer();
+        updateGameBoard();
+        saveGameState();
+    }
+
+    // ОБНОВЛЕНИЕ ИНДИКАТОРА ТЕКУЩЕГО ХОДА
+    function updateTurnIndicator() {
+        const indicator = document.getElementById('turn-indicator');
+        if (gameState.gameOver) {
+            indicator.textContent = 'Игра завершена';
+            indicator.className = 'status-message';
+            return;
+        }
+
+        if (gameState.currentTeam === 'blue') {
+            indicator.textContent = 'Ход синей команды';
+            indicator.className = 'status-message blue';
+        } else {
+            indicator.textContent = 'Ход красной команды';
+            indicator.className = 'status-message red';
+        }
+    }
+
+    // ОБНОВЛЕНИЕ СЧЕТА
+    function updateScore() {
+        document.getElementById('blue-score').textContent = gameState.blueScore;
+        document.getElementById('red-score').textContent = gameState.redScore;
+        document.getElementById('blue-cards').textContent = gameState.blueCardsRemaining;
+        document.getElementById('red-cards').textContent = gameState.redCardsRemaining;
+        saveGameState();
+    }
+
+    // ПРИСОЕДИНЕНИЕ К КОМАНДЕ
+    function joinTeam(team) {
+        if (!gameState.playerName || gameState.playerName.trim() === '') {
+            alert('Пожалуйста, введите ваше имя');
+            document.getElementById('player-name-input').focus();
+            return;
+        }
+
+        if (gameState.playerTeam) {
+            leaveTeam();
+        }
+
+        gameState.playerTeam = team;
+        gameState.playerRole = 'agent';
+
+        const existingPlayer = gameState.players[team].find(p => p.id === gameState.playerId);
+        if (!existingPlayer) {
+            gameState.players[team].push({
+                id: gameState.playerId,
+                name: gameState.playerName,
+                role: 'agent',
+                team: team
+            });
+        } else {
+            existingPlayer.role = 'agent';
+        }
+
+        updateUIForRole();
+        updatePlayersList();
+        updateGameBoard();
+
+        const hasMaster = gameState.players[team].some(player => player.role === 'master');
+        if (!hasMaster) {
+            document.getElementById('master-buttons').style.display = 'block';
+        } else {
+            document.getElementById('master-buttons').style.display = 'none';
+        }
+
+        document.getElementById('leave-game-btn').style.display = 'block';
+        document.getElementById('chat-input').disabled = false;
+        document.getElementById('send-chat-btn').disabled = false;
+        document.getElementById('mobile-chat-input-field').disabled = false;
+        document.getElementById('send-mobile-chat-btn').disabled = false;
+
+        addSystemMessage(`${gameState.playerName} присоединился(ась) к ${team === 'blue' ? 'синей' : 'красной'} команде.`);
+        saveGameState();
+    }
+
+    // ВЫХОД ИЗ КОМАНДЫ
+    function leaveTeam() {
+        if (!gameState.playerTeam) return;
+
+        const team = gameState.playerTeam;
+
+        gameState.players[team] = gameState.players[team].filter(player => player.id !== gameState.playerId);
+
+        if (gameState.playerRole === 'master') {
+            const otherPlayers = gameState.players[team].filter(player => player.id !== gameState.playerId);
+            if (otherPlayers.length > 0) {
+                otherPlayers[0].role = 'master';
+            }
+        }
+
+        gameState.playerTeam = null;
+        gameState.playerRole = 'agent';
+
+        updateUIForRole();
+        updatePlayersList();
+        updateGameBoard();
+
+        document.getElementById('master-buttons').style.display = 'none';
+        document.getElementById('hint-controls').style.display = 'none';
+        document.getElementById('leave-game-btn').style.display = 'none';
+        document.getElementById('chat-input').disabled = true;
+        document.getElementById('send-chat-btn').disabled = true;
+        document.getElementById('mobile-chat-input-field').disabled = true;
+        document.getElementById('send-mobile-chat-btn').disabled = true;
+
+        addSystemMessage(`${gameState.playerName} покинул(а) игру.`);
+        saveGameState();
+    }
+
+    // СТАТЬ ШПИОН-МАСТЕРОМ
+    function becomeMaster() {
+        if (!gameState.playerTeam) return;
+
+        const team = gameState.playerTeam;
+
+        const currentMaster = gameState.players[team].find(player => player.role === 'master');
+        if (currentMaster) {
+            currentMaster.role = 'agent';
+        }
+
+        const player = gameState.players[team].find(player => player.id === gameState.playerId);
+        if (player) {
+            player.role = 'master';
+            gameState.playerRole = 'master';
+        }
+
+        updateUIForRole();
+        updatePlayersList();
+        updateGameBoard();
+
+        addSystemMessage(`${gameState.playerName} теперь шпион-мастер ${team === 'blue' ? 'синей' : 'красной'} команды.`);
+        saveGameState();
+    }
+
+    // ОБНОВЛЕНИЕ ИНФОРМАЦИИ О РОЛИ ИГРОКА
+    function updatePlayerRoleInfo() {
+        const roleInfo = document.getElementById('player-role-info');
+
+        if (!gameState.playerTeam) {
+            roleInfo.innerHTML = `
+                    <p><strong>Имя:</strong> Не указано</p>
+                    <p><strong>Команда:</strong> Не присоединен</p>
+                `;
+            return;
+        }
+
+        const teamName = gameState.playerTeam === 'blue' ? 'синей' : 'красной';
+        const roleName = gameState.playerRole === 'master' ? 'шпион-мастер' : 'игрок';
+
+        roleInfo.innerHTML = `
+                <p><strong>Имя:</strong> ${gameState.playerName}</p>
+                <p><strong>Команда:</strong> ${teamName} ${gameState.playerRole === 'master' ? '(мастер)' : ''}</p>
+            `;
+    }
+
+    // ДАТЬ ПОДСКАЗКУ
+    function giveHint() {
+        if (gameState.gameOver) return;
+        if (gameState.playerRole !== 'master') return;
+        if (gameState.playerTeam !== gameState.currentTeam) {
+            alert('Сейчас не ход вашей команды!');
+            return;
+        }
+
+        const hintWord = document.getElementById('hint-word').value.trim();
+        const hintNumber = parseInt(document.getElementById('hint-number').value);
+
+        if (!hintWord || isNaN(hintNumber) || hintNumber < 0) {
+            alert('Пожалуйста, введите слово-подсказку и число (0 или больше)');
+            return;
+        }
+
+        gameState.currentHint = {
+            word: hintWord,
+            number: hintNumber,
+            team: gameState.playerTeam,
+            masterName: gameState.playerName
+        };
+
+        // Разблокируем карточки после подсказки
+        gameState.cardsBlocked = false;
+
+        gameState.hintsHistory.push({
+            ...gameState.currentHint,
+            timestamp: new Date().toLocaleTimeString()
+        });
+
+        document.getElementById('hint-text').textContent = hintWord;
+        document.getElementById('hint-count').textContent = hintNumber;
+
+        updateHintHistory();
+
+        document.getElementById('hint-word').value = '';
+        document.getElementById('hint-number').value = '';
+
+        const message = `${gameState.playerName} дал(а) подсказку: "${hintWord}" для ${hintNumber} слов`;
+        addChatMessage(message, true);
+
+        // Запускаем синхронизированный таймер на 90 секунд
+        startTimer(90);
+        startMasterTimer(90);
+
+        updateGameBoard();
+        saveGameState();
+    }
+
+    // ОБНОВЛЕНИЕ ИСТОРИИ ПОДСКАЗОК
+    function updateHintHistory() {
+        const historyContainer = document.getElementById('hint-history');
+        historyContainer.innerHTML = '';
+
+        const recentHints = [...gameState.hintsHistory].reverse().slice(0, 5);
+
+        recentHints.forEach(hint => {
+            const hintElement = document.createElement('div');
+            hintElement.className = `hint-item ${hint.team}`;
+            hintElement.innerHTML = `
+                    <div>
+                        <strong>${hint.word}</strong> (${hint.number})
+                    </div>
+                    <div style="font-size: 0.7rem; color: #aaa;">
+                        ${hint.timestamp}
+                    </div>
+                `;
+            historyContainer.appendChild(hintElement);
+        });
+    }
+
+    // РАБОТА С ТАЙМЕРОМ (синхронизированный для команды и мастера)
+    function startTimer(seconds) {
+        if (gameState.timer) {
+            clearInterval(gameState.timer);
+        }
+
+        gameState.timeLeft = seconds;
+        gameState.timerRunning = true;
+        updateTimerDisplay();
+
+        // Скрываем предупреждение при старте
+        document.getElementById('master-time-warning').style.display = 'none';
+
+        gameState.timer = setInterval(() => {
+            gameState.timeLeft--;
+            updateTimerDisplay();
+
+            // Показываем предупреждение за 30 секунд
+            if (gameState.timeLeft === 30) {
+                document.getElementById('master-time-warning').style.display = 'block';
+            }
+
+            if (gameState.timeLeft <= 0) {
+                clearInterval(gameState.timer);
+                gameState.timerRunning = false;
+
+                // Скрываем предупреждение
+                document.getElementById('master-time-warning').style.display = 'none';
+
+                addSystemMessage('Время вышло! Ход переходит другой команде.');
+                switchTeam();
+            }
+
+            saveGameState();
+        }, 1000);
+    }
+
+    // СИНХРОНИЗИРОВАННЫЙ ТАЙМЕР ДЛЯ МАСТЕРА
+    function startMasterTimer(seconds) {
+        if (gameState.masterTimer) {
+            clearInterval(gameState.masterTimer);
+        }
+
+        gameState.masterTimeLeft = seconds;
+        gameState.masterTimerRunning = true;
+        updateMasterTimerDisplay();
+
+        // Скрываем предупреждение при старте
+        document.getElementById('master-hint-warning').style.display = 'none';
+
+        gameState.masterTimer = setInterval(() => {
+            gameState.masterTimeLeft--;
+            updateMasterTimerDisplay();
+
+            // Показываем предупреждение за 30 секунд
+            if (gameState.masterTimeLeft === 30) {
+                document.getElementById('master-hint-warning').style.display = 'block';
+            }
+
+            if (gameState.masterTimeLeft <= 0) {
+                clearInterval(gameState.masterTimer);
+                gameState.masterTimerRunning = false;
+
+                // Скрываем предупреждение
+                document.getElementById('master-hint-warning').style.display = 'none';
+
+                // Если время у мастера вышло, а он не дал подсказку - передаем ход
+                if (!gameState.currentHint) {
+                    addSystemMessage('Время у мастера вышло! Ход переходит другой команде.');
+                    switchTeam();
+                }
+            }
+
+            saveGameState();
+        }, 1000);
+    }
+
+    function updateMasterTimerDisplay() {
+        const masterTimerElement = document.getElementById('master-timer');
+        const masterHintTimerElement = document.getElementById('master-hint-timer');
+
+        if (!gameState.masterTimerRunning) {
+            masterTimerElement.textContent = '--:--';
+            masterTimerElement.className = 'master-timer';
+            masterHintTimerElement.textContent = '--:--';
+            masterHintTimerElement.className = 'master-timer';
+            return;
+        }
+
+        const minutes = Math.floor(gameState.masterTimeLeft / 60);
+        const seconds = gameState.masterTimeLeft % 60;
+        const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+        masterTimerElement.textContent = timeString;
+        masterHintTimerElement.textContent = timeString;
+
+        masterTimerElement.className = 'master-timer running';
+        masterHintTimerElement.className = 'master-timer running';
+
+        if (gameState.masterTimeLeft <= 30) {
+            masterTimerElement.classList.add('warning');
+            masterHintTimerElement.classList.add('warning');
+        }
+    }
+
+    function resetMasterTimer() {
+        if (gameState.masterTimer) {
+            clearInterval(gameState.masterTimer);
+        }
+        gameState.masterTimeLeft = 0;
+        gameState.masterTimerRunning = false;
+        updateMasterTimerDisplay();
+
+        // Скрываем предупреждения
+        document.getElementById('master-time-warning').style.display = 'none';
+        document.getElementById('master-hint-warning').style.display = 'none';
+
+        saveGameState();
+    }
+
+    function resetTimer() {
+        if (gameState.timer) {
+            clearInterval(gameState.timer);
+        }
+        gameState.timeLeft = 0;
+        gameState.timerRunning = false;
+        updateTimerDisplay();
+
+        // Скрываем предупреждение
+        document.getElementById('master-time-warning').style.display = 'none';
+
+        saveGameState();
+    }
+
+    function updateTimerDisplay() {
+        const timerElement = document.getElementById('timer');
+
+        if (!gameState.timerRunning) {
+            timerElement.textContent = '--:--';
+            timerElement.className = 'timer';
+            return;
+        }
+
+        const minutes = Math.floor(gameState.timeLeft / 60);
+        const seconds = gameState.timeLeft % 60;
+        timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+        timerElement.className = 'timer running';
+        if (gameState.timeLeft <= 30) {
+            timerElement.classList.add('warning');
+        }
+    }
+
+    // РАБОТА С ЧАТОМ
+    function addChatMessage(message, isSystem = false) {
+        const chatMessages = document.getElementById('chat-messages');
+        const messageElement = document.createElement('div');
+
+        if (isSystem) {
+            messageElement.className = 'message system';
+            messageElement.textContent = message;
+        } else {
+            messageElement.className = 'message';
+            messageElement.innerHTML = `<strong>${gameState.playerName}:</strong> ${message}`;
+        }
+
+        chatMessages.appendChild(messageElement);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        gameState.chatHistory.push({
+            sender: isSystem ? 'system' : gameState.playerName,
+            message: message,
+            timestamp: new Date().toLocaleTimeString(),
+            team: gameState.playerTeam
+        });
+
+        // Обновляем мобильный чат
+        updateMobileChatMessages();
+
+        // Если мобильный чат закрыт, показываем бейдж
+        if (!document.getElementById('mobile-chat-container').classList.contains('active')) {
+            gameState.newMessagesCount++;
+            updateChatBadge();
+        }
+
+        saveGameState();
+    }
+
+    function updateChatBadge() {
+        const badge = document.getElementById('chat-badge');
+        if (gameState.newMessagesCount > 0) {
+            badge.textContent = gameState.newMessagesCount;
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    function updateMobileChatMessages() {
+        const mobileChatMessages = document.getElementById('mobile-chat-messages');
+        mobileChatMessages.innerHTML = '';
+
+        const lastMessages = gameState.chatHistory.slice(-10); // Последние 10 сообщений
+
+        lastMessages.forEach(msg => {
+            const messageElement = document.createElement('div');
+
+            if (msg.sender === 'system') {
+                if (msg.type === 'game-start') {
+                    messageElement.className = 'message game-start';
+                } else {
+                    messageElement.className = 'message system';
+                }
+                messageElement.textContent = msg.message;
+            } else {
+                messageElement.className = 'message';
+                messageElement.innerHTML = `<strong>${msg.sender}:</strong> ${msg.message}`;
+            }
+
+            mobileChatMessages.appendChild(messageElement);
+        });
+
+        mobileChatMessages.scrollTop = mobileChatMessages.scrollHeight;
+    }
+
+    function addSystemMessage(message) {
+        addChatMessage(message, true);
+    }
+
+    function restoreChatHistory() {
+        const chatMessages = document.getElementById('chat-messages');
+        chatMessages.innerHTML = '';
+
+        gameState.chatHistory.forEach(msg => {
+            const messageElement = document.createElement('div');
+
+            if (msg.sender === 'system') {
+                if (msg.type === 'game-start') {
+                    messageElement.className = 'message game-start';
+                } else {
+                    messageElement.className = 'message system';
+                }
+                messageElement.textContent = msg.message;
+            } else {
+                messageElement.className = 'message';
+                messageElement.innerHTML = `<strong>${msg.sender}:</strong> ${msg.message}`;
+            }
+
+            chatMessages.appendChild(messageElement);
+        });
+
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        updateMobileChatMessages();
+    }
+
+    // СОХРАНЕНИЕ ИМЕНИ
+    function saveName() {
+        const nameInput = document.getElementById('player-name-input');
+        const name = nameInput.value.trim();
+
+        if (!name) {
+            alert('Пожалуйста, введите имя');
+            return;
+        }
+
+        gameState.playerName = name;
+        savePlayerName(name);
+
+        updatePlayerRoleInfo();
+
+        addSystemMessage(`Добро пожаловать, ${name}!`);
+    }
+
+    // ПОКАЗАТЬ/СКРЫТЬ МОДАЛЬНЫЕ ОКНА
+    function showModal(modalId) {
+        document.getElementById(modalId).style.display = 'flex';
+    }
+
+    function hideModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+
+    // МОБИЛЬНАЯ НАВИГАЦИЯ
+    function setupMobileNavigation() {
+        const tabs = document.querySelectorAll('.mobile-tab');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function(e) {
+                e.preventDefault();
+                const tabName = this.getAttribute('data-tab');
+
+                tabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+
+                if (tabName === 'game') {
+                    document.querySelector('.game-board').classList.add('mobile-active');
+                    document.querySelector('.game-controls').classList.remove('mobile-active');
+                    document.querySelector('.chat-panel').classList.remove('mobile-active');
+                } else if (tabName === 'controls') {
+                    document.querySelector('.game-board').classList.remove('mobile-active');
+                    document.querySelector('.game-controls').classList.add('mobile-active');
+                    document.querySelector('.chat-panel').classList.remove('mobile-active');
+                } else if (tabName === 'chat') {
+                    document.querySelector('.game-board').classList.remove('mobile-active');
+                    document.querySelector('.game-controls').classList.remove('mobile-active');
+                    document.querySelector('.chat-panel').classList.add('mobile-active');
+                }
+            });
+        });
+    }
+
+    // НАСТРОЙКА МОБИЛЬНОГО ЧАТА
+    function setupMobileChat() {
+        const openChatBtn = document.getElementById('open-chat-btn');
+        const closeChatBtn = document.getElementById('close-mobile-chat');
+        const chatContainer = document.getElementById('mobile-chat-container');
+
+        openChatBtn.addEventListener('click', function() {
+            chatContainer.classList.add('active');
+            gameState.newMessagesCount = 0;
+            updateChatBadge();
+        });
+
+        closeChatBtn.addEventListener('click', function() {
+            chatContainer.classList.remove('active');
+        });
+
+        document.getElementById('send-mobile-chat-btn').addEventListener('click', sendMobileChatMessage);
+        document.getElementById('mobile-chat-input-field').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMobileChatMessage();
+            }
+        });
+
+        // Закрытие чата по клику вне его
+        document.addEventListener('click', function(e) {
+            if (!chatContainer.contains(e.target) && !openChatBtn.contains(e.target) && chatContainer.classList.contains('active')) {
+                chatContainer.classList.remove('active');
+            }
+        });
+    }
+
+    function sendMobileChatMessage() {
+        const chatInput = document.getElementById('mobile-chat-input-field');
+        const message = chatInput.value.trim();
+
+        if (message && gameState.playerTeam) {
+            addChatMessage(message);
+            chatInput.value = '';
+        }
+    }
+
+    // ПРОВЕРКА МОБИЛЬНОГО УСТРОЙСТВА
+    function isMobileDevice() {
+        return window.innerWidth <= 768;
+    }
+
+    // ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ СТРАНИЦЫ
+    document.addEventListener('DOMContentLoaded', function() {
+        // Загрузить сохраненные данные
+        const savedName = loadPlayerName();
+        if (savedName) {
+            gameState.playerName = savedName;
+            document.getElementById('player-name-input').value = savedName;
+        }
+
+        loadLobbyState();
+
+        // Если есть сохраненная игра, показать окно восстановления
+        const savedState = loadGameState();
+        if (savedState && savedState.cards && savedState.cards.length > 0) {
+            showModal('restore-modal');
+        }
+
+        // Обработчики для лобби
+        document.getElementById('create-game-btn').addEventListener('click', function() {
+            if (!gameState.playerName || gameState.playerName.trim() === '') {
+                alert('Пожалуйста, введите ваше имя перед созданием комнаты');
+                document.getElementById('player-name-input').focus();
+                return;
+            }
+            createRoom();
+        });
+
+        document.getElementById('join-game-btn').addEventListener('click', function() {
+            document.getElementById('code-input-section').classList.add('active');
+        });
+
+        document.getElementById('join-room-btn').addEventListener('click', function() {
+            const code = document.getElementById('room-code-input').value.trim();
+            if (code.length === 6) {
+                joinRoom(code);
+            } else {
+                alert('Пожалуйста, введите 6-значный код');
+            }
+        });
+
+        document.getElementById('start-game-btn').addEventListener('click', startGame);
+
+        // Обработчики для панели управления
+        document.getElementById('admin-toggle-btn').addEventListener('click', function() {
+            document.getElementById('admin-controls').classList.toggle('active');
+        });
+
+        document.getElementById('shuffle-teams-btn').addEventListener('click', shuffleTeams);
+        document.getElementById('pause-game-btn').addEventListener('click', togglePauseGame);
+        document.getElementById('end-game-btn').addEventListener('click', endGameEarly);
+        document.getElementById('reset-game-btn').addEventListener('click', resetGame);
+
+        // Скрыть панель управления при клике вне ее
+        document.addEventListener('click', function(e) {
+            const adminControls = document.getElementById('admin-controls');
+            const adminToggle = document.getElementById('admin-toggle-btn');
+
+            if (adminControls && adminToggle &&
+                !adminControls.contains(e.target) &&
+                !adminToggle.contains(e.target)) {
+                adminControls.classList.remove('active');
+            }
+        });
+
+        // Основные обработчики игры
+        document.getElementById('join-blue-btn').addEventListener('click', () => joinTeam('blue'));
+        document.getElementById('join-red-btn').addEventListener('click', () => joinTeam('red'));
+        document.getElementById('leave-game-btn').addEventListener('click', leaveTeam);
+        document.getElementById('become-master-btn').addEventListener('click', becomeMaster);
+        document.getElementById('give-hint-btn').addEventListener('click', giveHint);
+        document.getElementById('save-name-btn').addEventListener('click', saveName);
+        document.getElementById('next-game-btn').addEventListener('click', initNewGame);
+
+        document.getElementById('rules-btn-header').addEventListener('click', () => showModal('rules-modal'));
+        document.getElementById('rules-btn-main').addEventListener('click', () => showModal('rules-modal'));
+
+        document.getElementById('close-restore-btn').addEventListener('click', () => hideModal('restore-modal'));
+        document.getElementById('close-rules-btn').addEventListener('click', () => hideModal('rules-modal'));
+        document.getElementById('close-rules-modal-btn').addEventListener('click', () => hideModal('rules-modal'));
+
+        document.getElementById('restore-game-btn').addEventListener('click', () => {
+            hideModal('restore-modal');
+            // Прямо переходим в игру, минуя лобби
+            document.getElementById('lobby-modal').style.display = 'none';
+            document.getElementById('game-container').style.display = 'block';
+            initGame(true);
+        });
+
+        document.getElementById('new-game-modal-btn').addEventListener('click', () => {
+            hideModal('restore-modal');
+            // Остаемся в лобби для создания/присоединения
+        });
+
+        document.getElementById('send-chat-btn').addEventListener('click', () => {
+            const chatInput = document.getElementById('chat-input');
+            const message = chatInput.value.trim();
+
+            if (message && gameState.playerTeam) {
+                addChatMessage(message);
+                chatInput.value = '';
+            }
+        });
+
+        document.getElementById('chat-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('send-chat-btn').click();
+            }
+        });
+
+        document.getElementById('player-name-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                saveName();
+            }
+        });
+
+        document.getElementById('hint-word').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                giveHint();
+            }
+        });
+
+        document.getElementById('hint-number').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                giveHint();
+            }
+        });
+
+        const newGameBtn = document.createElement('button');
+        newGameBtn.className = 'new-game-btn';
+        newGameBtn.innerHTML = '<i class="fas fa-plus-circle"></i> Новая игра (полный сброс)';
+        newGameBtn.addEventListener('click', () => {
+            if (confirm('Начать новую игру с полным сбросом? Все игроки и история чата будут удалены.')) {
+                localStorage.removeItem(STORAGE_KEY);
+                gameState.playerTeam = null;
+                gameState.playerRole = 'agent';
+                initGame(false);
+            }
+        });
+        document.querySelector('.controls').prepend(newGameBtn);
+
+        updatePlayerRoleInfo();
+
+        // Инициализация мобильного интерфейса
+        if (isMobileDevice()) {
+            setupMobileNavigation();
+            setupMobileChat();
+            document.getElementById('open-chat-btn').classList.add('active');
+        }
+
+        window.addEventListener('resize', function() {
+            if (isMobileDevice()) {
+                setupMobileNavigation();
+                document.getElementById('open-chat-btn').classList.add('active');
+            } else {
+                document.getElementById('open-chat-btn').classList.remove('active');
+            }
+        });
+
+        document.querySelectorAll('.modal-overlay').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.style.display = 'none';
+                }
+            });
+        });
+    });
+</script>
+</body>
+</html>
