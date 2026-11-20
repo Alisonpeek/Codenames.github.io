@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Codenames Online - Мультиплеер с рейтингом и аккаунтами</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -24,12 +24,13 @@
             padding: 0;
             box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
             background-color: var(--background);
             color: #f1f1f1;
-            line-height: 1.6;
+            line-height: 1.5;
             min-height: 100vh;
             padding: 0;
             overflow-x: hidden;
@@ -38,7 +39,7 @@
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 15px;
+            padding: 12px;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
@@ -47,14 +48,14 @@
 
         header {
             text-align: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
+            margin-bottom: 15px;
+            padding-bottom: 12px;
             border-bottom: 2px solid var(--blue-team);
             position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .header-content {
@@ -64,12 +65,12 @@
             width: 100%;
             position: relative;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 10px;
         }
 
         h1 {
             color: var(--blue-team);
-            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            font-size: clamp(1.4rem, 4vw, 2.6rem);
             margin-bottom: 0;
             word-break: break-word;
             text-align: center;
@@ -77,39 +78,40 @@
 
         .subtitle {
             color: #8f94fb;
-            font-size: clamp(0.9rem, 2vw, 1.1rem);
+            font-size: clamp(0.85rem, 2vw, 1.05rem);
             text-align: center;
         }
 
         .header-actions {
             position: absolute;
-            right: 10px;
-            top: 5px;
+            right: 5px;
+            top: 2px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .rules-btn-header {
             background: none;
             border: none;
             color: #8f94fb;
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             cursor: pointer;
-            padding: 8px;
+            padding: 6px;
             width: auto;
         }
 
         .user-pill {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             background: rgba(255, 255, 255, 0.1);
-            padding: 6px 12px;
+            padding: 5px 10px;
             border-radius: 20px;
             border: 1px solid rgba(143, 148, 251, 0.4);
             cursor: pointer;
             transition: all 0.2s;
+            font-size: 0.9rem;
         }
 
         .user-pill:hover {
@@ -117,8 +119,8 @@
         }
 
         .user-pill img {
-            width: 28px;
-            height: 28px;
+            width: 26px;
+            height: 26px;
             border-radius: 50%;
             object-fit: cover;
             background: #2c3e50;
@@ -128,17 +130,11 @@
             background: rgba(241, 196, 15, 0.2);
             color: var(--gold);
             border: 1px solid var(--gold);
-            padding: 2px 7px;
+            padding: 2px 6px;
             border-radius: 10px;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             font-weight: bold;
-        }
-
-        @media (max-width: 768px) {
-            .header-actions {
-                position: static;
-                margin-top: 5px;
-            }
+            white-space: nowrap;
         }
 
         .game-container {
@@ -149,30 +145,28 @@
             flex: 1;
         }
 
-        @media (max-width: 1024px) {
+        @media (max-width: 1080px) {
             .game-container {
                 grid-template-columns: 1fr;
-                grid-template-rows: auto auto;
             }
         }
 
         .main-game {
             display: grid;
-            grid-template-columns: 2fr 1fr;
+            grid-template-columns: 2.1fr 1fr;
             gap: 15px;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 820px) {
             .main-game {
                 grid-template-columns: 1fr;
-                grid-template-rows: auto auto;
             }
         }
 
         .game-board {
             background-color: var(--card-bg);
             border-radius: 10px;
-            padding: 15px;
+            padding: 12px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
             overflow: hidden;
         }
@@ -180,13 +174,13 @@
         .game-controls {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 12px;
         }
 
         .player-panel {
             background-color: var(--panel-bg);
             border-radius: 10px;
-            padding: 15px;
+            padding: 14px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
             overflow: hidden;
         }
@@ -194,113 +188,130 @@
         .cards-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            grid-gap: 8px;
+            gap: 8px;
             margin-top: 10px;
         }
 
-        @media (max-width: 1200px) {
-            .cards-grid {
-                grid-template-columns: repeat(4, 1fr);
-            }
-        }
-
-        @media (max-width: 768px) {
-            .cards-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
-
-        @media (max-width: 480px) {
-            .cards-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
         .card {
-            aspect-ratio: 1 / 0.8;
+            aspect-ratio: 1 / 0.78;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
-            border-radius: 6px;
+            border-radius: 7px;
             font-weight: bold;
-            font-size: clamp(0.8rem, 1.5vw, 1.1rem);
             cursor: pointer;
-            transition: all 0.3s ease;
-            padding: 8px;
+            transition: transform 0.15s ease, box-shadow 0.2s ease;
+            padding: 6px;
             user-select: none;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
             word-break: break-word;
             position: relative;
             overflow: hidden;
-            min-height: 60px;
+            min-height: 58px;
         }
 
         .card:hover:not(.disabled):not(.blocked) {
-            transform: translateY(-3px);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.35);
+        }
+
+        .card.holding {
+            transform: scale(0.96);
+            box-shadow: 0 0 0 2px var(--gold);
+        }
+
+        .card.peer-holding {
+            box-shadow: 0 0 0 2px rgba(241, 196, 15, 0.85);
+        }
+
+        .card-hold-progress {
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            height: 5px;
+            width: 0%;
+            background: linear-gradient(90deg, var(--gold), #2ecc71);
+            z-index: 4;
+            pointer-events: none;
+        }
+
+        .card-holder-tag {
+            position: absolute;
+            top: 3px;
+            left: 4px;
+            right: 4px;
+            font-size: 0.62rem;
+            background: rgba(0, 0, 0, 0.68);
+            color: var(--gold);
+            padding: 1px 4px;
+            border-radius: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            z-index: 4;
+            pointer-events: none;
         }
 
         .card .word {
             z-index: 2;
-            font-size: clamp(0.75rem, 1.3vw, 1rem);
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-            font-weight: 600;
+            font-size: clamp(0.72rem, 1.3vw, 0.98rem);
+            font-weight: 700;
+            line-height: 1.15;
         }
 
         .card.word {
             background-color: var(--neutral);
-            color: #333;
+            color: #222;
         }
 
         .card.blue {
             background-color: var(--blue-team);
             color: white;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-            border: 2px solid rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.25);
         }
 
         .card.red {
             background-color: var(--red-team);
             color: white;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-            border: 2px solid rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.25);
         }
 
         .card.neutral {
             background-color: var(--neutral);
             color: #333;
-            border: 2px solid rgba(0, 0, 0, 0.1);
+            border: 2px solid rgba(0, 0, 0, 0.12);
         }
 
         .card.assassin {
             background-color: var(--assassin);
             color: white;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-            border: 2px solid rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.25);
         }
 
         .card.selected {
-            transform: scale(0.95);
-            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+            transform: scale(0.97);
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.45);
         }
 
         .card.disabled {
-            opacity: 0.8;
-            cursor: not-allowed;
+            cursor: default;
         }
 
         .card.blocked {
             pointer-events: none;
-            cursor: not-allowed;
-            opacity: 0.65;
+            opacity: 0.78;
         }
 
         .card.master-view {
             color: white !important;
             text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8) !important;
-            font-weight: 600 !important;
         }
 
         .card.master-view.neutral {
@@ -322,24 +333,23 @@
 
         h2 {
             color: #8f94fb;
-            margin-bottom: 12px;
-            font-size: clamp(1.2rem, 2vw, 1.6rem);
+            margin-bottom: 10px;
+            font-size: clamp(1.1rem, 2vw, 1.45rem);
         }
 
         .team-info {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             gap: 10px;
-            flex-wrap: wrap;
         }
 
         .team {
             text-align: center;
-            padding: 12px;
+            padding: 10px;
             border-radius: 8px;
             flex: 1;
-            min-width: 140px;
+            min-width: 0;
         }
 
         .team.blue {
@@ -353,68 +363,81 @@
         }
 
         .team h3 {
-            margin-bottom: 6px;
-            font-size: clamp(1.1rem, 1.8vw, 1.4rem);
+            margin-bottom: 4px;
+            font-size: clamp(1rem, 1.8vw, 1.3rem);
         }
 
         .score {
-            font-size: clamp(1.6rem, 3vw, 2.2rem);
+            font-size: clamp(1.4rem, 3vw, 2rem);
             font-weight: bold;
+            line-height: 1.2;
         }
 
         .team-players {
             margin-top: 8px;
-            font-size: 0.8rem;
+            font-size: 0.78rem;
         }
 
         .player {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 5px 8px;
+            padding: 4px 7px;
             margin: 4px 0;
             background-color: rgba(255, 255, 255, 0.1);
             border-radius: 4px;
-            font-size: 0.8rem;
+            font-size: 0.78rem;
+            gap: 4px;
         }
 
         .player-left {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .player-left span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .player-left img {
-            width: 22px;
-            height: 22px;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
             object-fit: cover;
             background: #162447;
+            flex-shrink: 0;
         }
 
         .player.master::after {
             content: "👑";
-            margin-left: 4px;
+            margin-left: 3px;
+            flex-shrink: 0;
         }
 
         .player.me::before {
-            content: "➤ ";
+            content: "➤";
             color: var(--gold);
+            margin-right: 2px;
         }
 
         button {
-            padding: 11px 16px;
+            padding: 11px 14px;
             border: none;
-            border-radius: 6px;
-            font-size: clamp(0.85rem, 1.2vw, 1rem);
+            border-radius: 7px;
+            font-size: clamp(0.85rem, 1.2vw, 0.96rem);
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.25s ease;
+            transition: all 0.2s ease;
             width: 100%;
         }
 
         button:hover:not(:disabled) {
-            transform: translateY(-2px);
+            transform: translateY(-1px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
         }
 
@@ -448,6 +471,18 @@
             color: white;
         }
 
+        .skip-turn-btn {
+            background: linear-gradient(135deg, #f39c12, #d35400);
+            color: white;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .skip-turn-btn.voted {
+            background: linear-gradient(135deg, #27ae60, #1e8449);
+            box-shadow: 0 0 0 2px rgba(46, 204, 113, 0.5);
+        }
+
         .rules-btn-main {
             margin-top: 10px;
             background: linear-gradient(135deg, #8f94fb, #4e54c8);
@@ -460,7 +495,7 @@
             border: 2px solid var(--blue-team);
             background-color: rgba(255, 255, 255, 0.12);
             color: white !important;
-            font-size: 0.95rem;
+            font-size: 16px;
             width: 100%;
             transition: all 0.2s ease;
         }
@@ -497,12 +532,6 @@
             font-size: 1rem;
         }
 
-        .toggle-pass-btn:hover {
-            color: white;
-            transform: none;
-            box-shadow: none;
-        }
-
         .hint-input {
             display: flex;
             flex-direction: column;
@@ -511,13 +540,13 @@
         }
 
         .hint-status-note {
-            font-size: 0.82rem;
+            font-size: 0.8rem;
             color: var(--gold);
             margin-top: 6px;
         }
 
         .teams-lock-banner {
-            font-size: 0.82rem;
+            font-size: 0.8rem;
             color: #ff7675;
             background: rgba(231, 76, 60, 0.15);
             border: 1px solid rgba(231, 76, 60, 0.4);
@@ -529,26 +558,26 @@
 
         .current-hint {
             background: linear-gradient(135deg, rgba(143, 148, 251, 0.3), rgba(78, 84, 200, 0.2));
-            padding: 12px;
+            padding: 10px 12px;
             border-radius: 8px;
-            margin-top: 10px;
+            margin-top: 6px;
             font-size: 0.95rem;
             border: 1px solid rgba(143, 148, 251, 0.3);
         }
 
         .hint-history {
-            max-height: 150px;
+            max-height: 140px;
             overflow-y: auto;
             margin-top: 8px;
         }
 
         .hint-item {
-            padding: 7px 10px;
-            margin: 5px 0;
+            padding: 6px 10px;
+            margin: 4px 0;
             border-radius: 6px;
             display: flex;
             justify-content: space-between;
-            font-size: 0.85rem;
+            font-size: 0.84rem;
             background: rgba(255, 255, 255, 0.1);
             border-left: 4px solid transparent;
         }
@@ -557,13 +586,13 @@
         .hint-item.red { border-left-color: var(--red-team); }
 
         .timer {
-            font-size: clamp(1.2rem, 2.2vw, 1.6rem);
+            font-size: clamp(1.05rem, 2vw, 1.45rem);
             font-weight: bold;
             text-align: center;
-            padding: 10px;
-            border-radius: 10px;
+            padding: 8px 10px;
+            border-radius: 8px;
             background: rgba(0, 0, 0, 0.25);
-            margin: 10px 0;
+            margin: 8px 0;
             border: 2px solid rgba(255, 255, 255, 0.1);
         }
 
@@ -574,19 +603,18 @@
             display: flex;
             gap: 8px;
             margin-top: 10px;
-            flex-wrap: wrap;
         }
 
         .role-btn {
             flex: 1;
-            min-width: 120px;
+            min-width: 0;
         }
 
         .chat-panel {
             display: flex;
             flex-direction: column;
             height: 100%;
-            min-height: 400px;
+            min-height: 360px;
         }
 
         .chat-messages {
@@ -594,39 +622,35 @@
             overflow-y: auto;
             background: rgba(0, 0, 0, 0.25);
             border-radius: 10px;
-            padding: 12px;
+            padding: 10px;
             margin-bottom: 10px;
-            max-height: 380px;
-            min-height: 220px;
+            max-height: 400px;
+            min-height: 200px;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .message {
             margin-bottom: 8px;
-            padding: 8px 12px;
+            padding: 8px 10px;
             border-radius: 8px;
             background: rgba(255, 255, 255, 0.08);
             font-size: 0.88rem;
             word-break: break-word;
-            border-left: 4px solid transparent;
+            border-left: 3px solid #8f94fb;
         }
 
-        .message.system {
-            background: linear-gradient(90deg, rgba(52, 152, 219, 0.2), transparent);
-            border-left-color: var(--blue-team);
-            font-style: italic;
-        }
+        .message.blue-sender { border-left-color: var(--blue-team); }
+        .message.red-sender { border-left-color: var(--red-team); }
+        .message.spectator-sender { border-left-color: #95a5a6; }
 
-        .message.hint {
-            background: linear-gradient(90deg, rgba(46, 204, 113, 0.25), transparent);
-            border-left-color: var(--green);
-            font-weight: 600;
-        }
-
-        .message.game-start {
-            background: linear-gradient(90deg, rgba(155, 89, 182, 0.25), transparent);
-            border-left-color: #9b59b6;
-            font-weight: bold;
+        .chat-role-badge {
+            font-size: 0.68rem;
+            padding: 1px 5px;
+            border-radius: 4px;
+            margin-left: 5px;
+            background: rgba(255, 255, 255, 0.12);
+            color: #ccc;
+            font-weight: normal;
         }
 
         .chat-input {
@@ -638,27 +662,29 @@
         .chat-input button {
             width: auto;
             padding: 0 16px;
+            flex-shrink: 0;
         }
 
         .card-counter {
             display: inline-block;
-            width: 26px;
-            height: 26px;
+            width: 24px;
+            height: 24px;
             background: rgba(255, 255, 255, 0.15);
             border-radius: 50%;
             text-align: center;
-            line-height: 26px;
-            margin-left: 5px;
-            font-size: 0.85rem;
+            line-height: 24px;
+            margin-left: 4px;
+            font-size: 0.82rem;
             font-weight: bold;
         }
 
         .status-message {
-            padding: 10px 15px;
-            border-radius: 10px;
-            margin: 10px 0;
+            padding: 9px 12px;
+            border-radius: 8px;
+            margin: 8px 0;
             text-align: center;
             font-weight: bold;
+            font-size: clamp(0.85rem, 1.5vw, 1rem);
             background: rgba(0, 0, 0, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
@@ -676,22 +702,22 @@
         }
 
         .simple-role-info {
-            font-size: 0.9rem;
-            padding: 10px;
+            font-size: 0.88rem;
+            padding: 9px;
             background: rgba(255, 255, 255, 0.08);
             border-radius: 6px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background-color: rgba(10, 12, 24, 0.92);
+            background-color: rgba(10, 12, 24, 0.94);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 100;
-            padding: 15px;
+            padding: 12px;
             overflow-y: auto;
         }
 
@@ -699,8 +725,8 @@
             background: linear-gradient(135deg, var(--panel-bg), #1a335a);
             max-width: 750px;
             width: 100%;
-            padding: 28px;
-            border-radius: 15px;
+            padding: 22px;
+            border-radius: 14px;
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
             border: 1px solid rgba(143, 148, 251, 0.35);
             position: relative;
@@ -717,7 +743,7 @@
         .auth-tabs {
             display: flex;
             gap: 10px;
-            margin: 20px 0;
+            margin: 16px 0;
         }
 
         .auth-tab {
@@ -740,23 +766,23 @@
         .auth-form {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 11px;
             text-align: left;
         }
 
         .avatar-upload-box {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 12px;
             background: rgba(0, 0, 0, 0.22);
-            padding: 10px 14px;
+            padding: 10px 12px;
             border-radius: 10px;
             border: 1px dashed rgba(143, 148, 251, 0.5);
         }
 
         .avatar-preview-img {
-            width: 56px;
-            height: 56px;
+            width: 52px;
+            height: 52px;
             border-radius: 50%;
             object-fit: cover;
             border: 2px solid var(--blue-team);
@@ -768,18 +794,13 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            padding: 8px 14px;
+            padding: 8px 12px;
             background: linear-gradient(135deg, #8f94fb, #4e54c8);
             color: white;
             border-radius: 6px;
-            font-size: 0.85rem;
+            font-size: 0.84rem;
             font-weight: bold;
             cursor: pointer;
-            transition: opacity 0.2s;
-        }
-
-        .file-upload-label:hover {
-            opacity: 0.9;
         }
 
         .profile-header-bar {
@@ -787,9 +808,9 @@
             justify-content: space-between;
             align-items: center;
             background: rgba(0, 0, 0, 0.25);
-            padding: 12px 16px;
+            padding: 10px 14px;
             border-radius: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             flex-wrap: wrap;
             gap: 10px;
         }
@@ -797,13 +818,13 @@
         .profile-summary {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             text-align: left;
         }
 
         .profile-summary img {
-            width: 50px;
-            height: 50px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             object-fit: cover;
             border: 2px solid var(--blue-team);
@@ -813,49 +834,49 @@
         .profile-actions {
             display: flex;
             gap: 8px;
+            flex-wrap: wrap;
         }
 
         .btn-sm {
-            padding: 7px 12px;
-            font-size: 0.85rem;
+            padding: 7px 11px;
+            font-size: 0.82rem;
             width: auto;
         }
 
         .lobby-options {
             display: flex;
-            gap: 15px;
+            gap: 12px;
             justify-content: center;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             flex-wrap: wrap;
         }
 
         .lobby-option {
             flex: 1;
-            min-width: 220px;
-            padding: 22px;
+            min-width: 200px;
+            padding: 18px;
             border-radius: 10px;
             background: rgba(255, 255, 255, 0.08);
             border: 2px solid transparent;
-            transition: all 0.25s ease;
+            transition: all 0.2s ease;
             cursor: pointer;
             text-align: center;
         }
 
         .lobby-option:hover {
-            transform: translateY(-4px);
             border-color: var(--blue-team);
             background: rgba(52, 152, 219, 0.15);
         }
 
         .lobby-option i {
-            font-size: 2.4rem;
-            margin-bottom: 10px;
+            font-size: 2.1rem;
+            margin-bottom: 8px;
             color: #8f94fb;
         }
 
         .code-input-section {
-            margin-top: 15px;
-            padding: 18px;
+            margin-top: 12px;
+            padding: 15px;
             background: rgba(0, 0, 0, 0.25);
             border-radius: 10px;
             display: none;
@@ -868,22 +889,22 @@
 
         .code-input {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             max-width: 380px;
-            margin: 12px auto 0;
+            margin: 10px auto 0;
         }
 
         .code-input input {
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             text-align: center;
-            letter-spacing: 5px;
+            letter-spacing: 4px;
             font-weight: bold;
             text-transform: uppercase;
         }
 
         .game-code-display {
-            margin: 15px 0;
-            padding: 15px;
+            margin: 12px 0;
+            padding: 12px;
             background: rgba(52, 152, 219, 0.15);
             border-radius: 10px;
             border: 2px solid var(--blue-team);
@@ -891,12 +912,12 @@
         }
 
         .game-code {
-            font-size: 2.2rem;
+            font-size: clamp(1.6rem, 5vw, 2.2rem);
             font-weight: bold;
-            letter-spacing: 7px;
+            letter-spacing: 6px;
             color: white;
-            margin: 10px 0;
-            padding: 10px;
+            margin: 8px 0;
+            padding: 8px;
             background: rgba(0, 0, 0, 0.35);
             border-radius: 8px;
             font-family: monospace;
@@ -909,8 +930,8 @@
             gap: 8px;
             max-height: 200px;
             overflow-y: auto;
-            margin: 12px 0;
-            padding: 10px;
+            margin: 10px 0;
+            padding: 8px;
             background: rgba(0, 0, 0, 0.2);
             border-radius: 10px;
         }
@@ -919,42 +940,45 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 12px;
+            padding: 8px 10px;
             background: rgba(255, 255, 255, 0.08);
             border-radius: 8px;
+            gap: 8px;
         }
 
         .player-waiting .player-info {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
+            min-width: 0;
         }
 
         .player-waiting img {
-            width: 32px;
-            height: 32px;
+            width: 30px;
+            height: 30px;
             border-radius: 50%;
             object-fit: cover;
+            flex-shrink: 0;
         }
 
         .close-modal-btn {
             position: absolute;
-            top: 15px;
-            right: 15px;
+            top: 12px;
+            right: 14px;
             background: none;
             border: none;
             color: #8f94fb;
             font-size: 1.8rem;
             cursor: pointer;
             width: auto;
-            padding: 5px;
+            padding: 4px;
         }
 
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin: 15px 0;
+            gap: 8px;
+            margin: 14px 0;
         }
 
         @media (max-width: 600px) {
@@ -963,20 +987,20 @@
 
         .stat-card {
             background: rgba(0, 0, 0, 0.25);
-            padding: 12px;
+            padding: 10px;
             border-radius: 8px;
             text-align: center;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .stat-value {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: bold;
             color: var(--gold);
         }
 
         .stat-label {
-            font-size: 0.78rem;
+            font-size: 0.75rem;
             color: #aaa;
         }
 
@@ -984,7 +1008,7 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
-            max-height: 260px;
+            max-height: 250px;
             overflow-y: auto;
             margin-top: 10px;
         }
@@ -993,11 +1017,11 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 12px;
+            padding: 9px 11px;
             background: rgba(255, 255, 255, 0.07);
             border-radius: 8px;
             border-left: 4px solid #888;
-            font-size: 0.85rem;
+            font-size: 0.84rem;
         }
 
         .match-item.win { border-left-color: var(--green); }
@@ -1008,8 +1032,8 @@
 
         .admin-panel {
             position: fixed;
-            top: 20px;
-            right: 20px;
+            bottom: 16px;
+            right: 16px;
             z-index: 90;
         }
 
@@ -1017,22 +1041,23 @@
             background: linear-gradient(135deg, #9b59b6, #8e44ad);
             color: white;
             border-radius: 50%;
-            width: 46px;
-            height: 46px;
+            width: 48px;
+            height: 48px;
             font-size: 1.3rem;
             padding: 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
         }
 
         .admin-controls {
             position: absolute;
-            top: 55px;
+            bottom: 58px;
             right: 0;
             background: linear-gradient(135deg, var(--panel-bg), #1a335a);
             border-radius: 10px;
-            padding: 16px;
-            min-width: 270px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(143, 148, 251, 0.3);
+            padding: 15px;
+            min-width: 260px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(143, 148, 251, 0.35);
             display: none;
         }
 
@@ -1049,7 +1074,7 @@
             padding: 10px 12px;
             background: rgba(255, 255, 255, 0.1);
             color: white;
-            font-size: 0.88rem;
+            font-size: 0.86rem;
             text-align: left;
             display: flex;
             align-items: center;
@@ -1057,51 +1082,35 @@
         }
 
         .room-creator-badge {
-            position: absolute;
-            top: 10px;
-            left: 10px;
             background: linear-gradient(135deg, #9b59b6, #8e44ad);
             color: white;
-            padding: 4px 10px;
+            padding: 3px 9px;
             border-radius: 5px;
-            font-size: 0.78rem;
+            font-size: 0.74rem;
             font-weight: bold;
         }
 
-        .game-paused-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.88);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 200;
-            flex-direction: column;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .game-paused-overlay.active { display: flex; }
-
+        .game-paused-overlay,
         .winner-celebration {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0, 0, 0, 0.92);
+            background: rgba(0, 0, 0, 0.9);
             display: none;
             align-items: center;
             justify-content: center;
-            z-index: 300;
+            z-index: 250;
             flex-direction: column;
             text-align: center;
             padding: 20px;
         }
 
+        .game-paused-overlay.active,
         .winner-celebration.active { display: flex; }
 
         .winner-text {
-            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-size: clamp(2.2rem, 6vw, 4.2rem);
             font-weight: 900;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
 
         .winner-text.blue { color: var(--blue-team); }
@@ -1109,18 +1118,86 @@
 
         .error-text {
             color: #ff7675;
-            font-size: 0.85rem;
+            font-size: 0.84rem;
             margin-top: 5px;
             min-height: 18px;
         }
 
         footer {
             text-align: center;
-            margin-top: 15px;
-            padding-top: 12px;
+            margin-top: 12px;
+            padding-top: 10px;
             color: #8f94fb;
-            font-size: 0.8rem;
+            font-size: 0.76rem;
             border-top: 1px solid rgba(143, 148, 251, 0.3);
+        }
+
+        /* МОБИЛЬНАЯ АДАПТАЦИЯ */
+        @media (max-width: 768px) {
+            .container {
+                padding: 8px;
+            }
+            header {
+                margin-bottom: 10px;
+                padding-bottom: 8px;
+            }
+            .header-actions {
+                position: static;
+                width: 100%;
+                justify-content: center;
+            }
+            .game-board {
+                padding: 8px;
+            }
+            .cards-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 6px;
+            }
+            .card {
+                aspect-ratio: auto;
+                min-height: 54px;
+                padding: 5px 4px;
+            }
+            .card .word {
+                font-size: 0.78rem;
+            }
+            .player-panel {
+                padding: 11px;
+            }
+            .chat-panel {
+                min-height: 290px;
+            }
+            .chat-messages {
+                max-height: 250px;
+                min-height: 160px;
+            }
+            .modal-content, .lobby-container {
+                padding: 16px 14px;
+                border-radius: 12px;
+            }
+            .profile-header-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .profile-actions {
+                justify-content: stretch;
+            }
+            .profile-actions button {
+                flex: 1;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .cards-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 6px;
+            }
+            .card .word {
+                font-size: 0.82rem;
+            }
+            .team {
+                padding: 8px 6px;
+            }
         }
     </style>
 </head>
@@ -1129,11 +1206,11 @@
 <!-- МОДАЛЬНОЕ ОКНО: АВТОРИЗАЦИЯ / ЛОББИ -->
 <div class="modal-overlay" id="lobby-modal" style="display: flex;">
     <div class="lobby-container">
-        <h2 style="text-align: center; font-size: 2rem; margin-bottom: 5px;">
+        <h2 style="text-align: center; font-size: clamp(1.5rem, 4vw, 2rem); margin-bottom: 4px;">
             <i class="fas fa-user-secret"></i> Codenames Online
         </h2>
-        <p style="text-align: center; color: #8f94fb; margin-bottom: 20px;">
-            Мультиплеер в реальном времени • Рейтинг ELO • История матчей
+        <p style="text-align: center; color: #8f94fb; margin-bottom: 16px; font-size: 0.9rem;">
+            Мультиплеер в реальном времени • Рейтинг ELO
         </p>
 
         <div class="auth-box" id="auth-section">
@@ -1184,18 +1261,18 @@
                 <div class="profile-summary">
                     <img id="lobby-user-avatar" src="" alt="Avatar">
                     <div>
-                        <div style="font-weight: bold; font-size: 1.05rem;">
+                        <div style="font-weight: bold; font-size: 1rem;">
                             <span id="lobby-user-name">Игрок</span>
                             <span class="elo-badge" id="lobby-user-elo">1000 ELO</span>
                         </div>
-                        <div style="font-size: 0.8rem; color: #aaa;">
+                        <div style="font-size: 0.78rem; color: #aaa;">
                             Побед: <span id="lobby-user-wins">0</span> | Игр: <span id="lobby-user-games">0</span>
                         </div>
                     </div>
                 </div>
                 <div class="profile-actions">
                     <button class="master-view-btn btn-sm" id="open-profile-btn">
-                        <i class="fas fa-trophy"></i> Профиль и матчи
+                        <i class="fas fa-trophy"></i> Профиль
                     </button>
                     <button class="leave-btn btn-sm" id="logout-btn">
                         <i class="fas fa-sign-out-alt"></i> Выйти
@@ -1207,13 +1284,13 @@
                 <div class="lobby-option" id="create-game-btn">
                     <i class="fas fa-plus-circle"></i>
                     <h3>Создать игру</h3>
-                    <p>Создайте новую комнату и получите код приглашения</p>
+                    <p style="font-size: 0.86rem; color: #ccc;">Создайте комнату и запустите матч, когда все соберутся</p>
                 </div>
 
                 <div class="lobby-option" id="join-game-btn">
                     <i class="fas fa-sign-in-alt"></i>
                     <h3>Войти по коду</h3>
-                    <p>Подключитесь к комнате друзей по 6-значному коду</p>
+                    <p style="font-size: 0.86rem; color: #ccc;">Подключитесь к комнате друзей по 6-значному коду</p>
                 </div>
             </div>
 
@@ -1221,7 +1298,7 @@
                 <h3><i class="fas fa-key"></i> Введите код комнаты</h3>
                 <div class="code-input">
                     <input type="text" id="room-code-input" placeholder="XXXXXX" maxlength="6">
-                    <button class="join-btn" id="join-room-btn" style="width: auto; padding: 11px 22px;">
+                    <button class="join-btn" id="join-room-btn" style="width: auto; padding: 11px 20px;">
                         Войти
                     </button>
                 </div>
@@ -1231,8 +1308,11 @@
             <div id="game-lobby" style="display: none;">
                 <div class="game-code-display">
                     <h3><i class="fas fa-users"></i> Комната ожидания</h3>
-                    <p style="color: #aaa; font-size: 0.85rem;">Нажмите на код, чтобы скопировать:</p>
+                    <p style="color: #aaa; font-size: 0.82rem;">Нажмите на код, чтобы скопировать:</p>
                     <div class="game-code" id="game-code-display" title="Нажмите для копирования">XXXXXX</div>
+                    <p id="lobby-wait-note" style="color: var(--gold); font-size: 0.84rem; margin-top: 6px;">
+                        Ожидание старта игры создателем комнаты...
+                    </p>
                 </div>
 
                 <div>
@@ -1240,11 +1320,11 @@
                     <div class="players-list" id="lobby-players-list"></div>
                 </div>
 
-                <div style="display: flex; gap: 10px; margin-top: 15px;">
-                    <button class="new-game-btn" id="start-game-btn" style="display: none;">
+                <div style="display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;">
+                    <button class="new-game-btn" id="start-game-btn" style="display: none; flex: 1;">
                         <i class="fas fa-play"></i> Начать игру
                     </button>
-                    <button class="leave-btn" id="leave-lobby-btn">
+                    <button class="leave-btn" id="leave-lobby-btn" style="flex: 1;">
                         <i class="fas fa-door-open"></i> Покинуть комнату
                     </button>
                 </div>
@@ -1253,7 +1333,7 @@
     </div>
 </div>
 
-<!-- МОДАЛЬНОЕ ОКНО: ПРОФИЛЬ, ЗАГРУЗКА АВАТАРА И ИСТОРИЯ МАТЧЕЙ -->
+<!-- МОДАЛЬНОЕ ОКНО: ПРОФИЛЬ -->
 <div class="modal-overlay" id="profile-modal" style="display: none;">
     <div class="modal-content">
         <button class="close-modal-btn" id="close-profile-btn">&times;</button>
@@ -1278,15 +1358,15 @@
             </div>
         </div>
 
-        <div style="margin: 15px 0;">
-            <label style="font-size: 0.9rem; color: #8f94fb; font-weight: bold; display: block; margin-bottom: 8px;">
+        <div style="margin: 14px 0;">
+            <label style="font-size: 0.88rem; color: #8f94fb; font-weight: bold; display: block; margin-bottom: 8px;">
                 Изменить аватар:
             </label>
             <div class="avatar-upload-box">
                 <img id="profile-avatar-preview" class="avatar-preview-img" src="" alt="Avatar">
                 <div style="flex: 1; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
                     <label for="profile-avatar-file" class="file-upload-label">
-                        <i class="fas fa-camera"></i> Загрузить свой аватар
+                        <i class="fas fa-camera"></i> Загрузить аватар
                     </label>
                     <input type="file" id="profile-avatar-file" accept="image/*" style="display: none;">
                     <button type="button" class="leave-btn btn-sm" id="reset-avatar-btn">Сбросить</button>
@@ -1294,7 +1374,7 @@
             </div>
         </div>
 
-        <h3 style="color: #8f94fb; margin-top: 15px; font-size: 1.1rem;">
+        <h3 style="color: #8f94fb; margin-top: 14px; font-size: 1.05rem;">
             <i class="fas fa-history"></i> История последних матчей
         </h3>
         <div class="match-history-list" id="match-history-list">
@@ -1306,13 +1386,13 @@
 <!-- ОСНОВНОЙ КОНТЕЙНЕР ИГРЫ -->
 <div class="container" id="game-container" style="display: none;">
     <header>
-        <div class="room-creator-badge" id="room-creator-badge" style="display: none;">
-            <i class="fas fa-crown"></i> Создатель (<span id="header-room-code"></span>)
-        </div>
         <div class="header-content">
+            <div class="room-creator-badge" id="room-creator-badge" style="display: none;">
+                <i class="fas fa-crown"></i> Создатель (<span id="header-room-code"></span>)
+            </div>
             <h1><i class="fas fa-user-secret"></i> Codenames Online</h1>
             <div class="header-actions">
-                <div class="user-pill" id="header-profile-btn" title="Открыть профиль и историю матчей">
+                <div class="user-pill" id="header-profile-btn" title="Профиль">
                     <img id="header-user-avatar" src="" alt="Avatar">
                     <span id="header-user-name">Агент</span>
                     <span class="elo-badge" id="header-user-elo">1000</span>
@@ -1332,20 +1412,23 @@
                     <div class="team blue">
                         <h3><i class="fas fa-user-tie"></i> Синие</h3>
                         <div class="score" id="blue-score">0</div>
-                        <div>Осталось карт: <span id="blue-cards" class="card-counter">9</span></div>
+                        <div style="font-size: 0.84rem;">Осталось: <span id="blue-cards" class="card-counter">9</span></div>
                         <div class="team-players" id="blue-players"></div>
                     </div>
 
                     <div class="team red">
                         <h3><i class="fas fa-user-tie"></i> Красные</h3>
                         <div class="score" id="red-score">0</div>
-                        <div>Осталось карт: <span id="red-cards" class="card-counter">8</span></div>
+                        <div style="font-size: 0.84rem;">Осталось: <span id="red-cards" class="card-counter">8</span></div>
                         <div class="team-players" id="red-players"></div>
                     </div>
                 </div>
 
                 <div class="timer" id="timer">--:--</div>
                 <div id="turn-indicator" class="status-message blue">Ход синей команды</div>
+                <div id="hold-hint-banner" style="text-align: center; font-size: 0.78rem; color: #aaa; margin-bottom: 6px; display: none;">
+                    <i class="fas fa-hand-pointer"></i> Зажмите и удерживайте карточку, чтобы открыть слово
+                </div>
 
                 <div class="cards-grid" id="cards-container"></div>
             </section>
@@ -1378,11 +1461,16 @@
                         </button>
                     </div>
 
-                    <button class="leave-btn" id="leave-team-btn" style="display: none; margin-top: 10px;">
-                        <i class="fas fa-sign-out-alt"></i> Покинуть команду
+                    <!-- Кнопка голосования большинства за пропуск хода -->
+                    <button class="skip-turn-btn" id="skip-turn-btn">
+                        <i class="fas fa-forward"></i> Завершить ход (<span id="skip-votes-count">0/0</span>)
                     </button>
 
-                    <div id="hint-controls" style="display: none; margin-top: 15px;">
+                    <button class="leave-btn" id="leave-team-btn" style="display: none; margin-top: 10px;">
+                        <i class="fas fa-sign-out-alt"></i> Стать наблюдателем
+                    </button>
+
+                    <div id="hint-controls" style="display: none; margin-top: 14px;">
                         <h3><i class="fas fa-lightbulb"></i> Дать подсказку</h3>
                         <div class="hint-input">
                             <input type="text" id="hint-word" placeholder="Одно слово-подсказка">
@@ -1414,7 +1502,7 @@
             <h2><i class="fas fa-comments"></i> Чат комнаты</h2>
             <div class="chat-messages" id="chat-messages"></div>
             <div class="chat-input">
-                <input type="text" id="chat-input" placeholder="Сообщение в чат...">
+                <input type="text" id="chat-input" placeholder="Сообщение игрокам и наблюдателям...">
                 <button id="send-chat-btn" class="new-game-btn"><i class="fas fa-paper-plane"></i></button>
             </div>
         </section>
@@ -1452,7 +1540,7 @@
 
 <!-- ОКНО ПАУЗЫ -->
 <div class="game-paused-overlay" id="game-paused-overlay">
-    <div style="font-size: 3.5rem; font-weight: bold; color: var(--gold);">ПАУЗА</div>
+    <div style="font-size: 3rem; font-weight: bold; color: var(--gold);">ПАУЗА</div>
     <p style="color: #ccc; margin-top: 10px; margin-bottom: 20px;">Создатель комнаты приостановил игру</p>
     <button class="join-btn" id="resume-pause-btn" style="display: none; max-width: 260px; padding: 14px 22px;">
         <i class="fas fa-play"></i> Снять паузу
@@ -1464,11 +1552,12 @@
     <div class="modal-content">
         <button class="close-modal-btn" id="close-rules-btn">&times;</button>
         <h2><i class="fas fa-book"></i> Правила игры Codenames</h2>
-        <div style="line-height: 1.7; color: #ddd;">
+        <div style="line-height: 1.65; color: #ddd; font-size: 0.94rem;">
             <p><strong>Цель:</strong> Первыми открыть всех агентов своего цвета на поле 5×5.</p>
-            <p><strong>Шпион-мастер (👑):</strong> Видит цвета всех карточек и даёт <strong>ровно одну подсказку за ход</strong> из <em>одного слова</em> и <em>числа</em>. На время подсказки у мастера идёт такой же таймер, как у игроков.</p>
-            <p><strong>Полевые агенты:</strong> Обсуждают подсказку в чате и открывают карточки. Ошибка или выбор нейтральной карты передаёт ход соперникам. Выбор чёрного <strong>Убийцы</strong> приводит к мгновенному поражению.</p>
-            <p><strong>Рейтинг ELO:</strong> После завершения партии победители получают прибавку к рейтингу ELO, а матч записывается в историю каждого участника.</p>
+            <p><strong>Шпион-мастер (👑):</strong> Видит цвета всех карточек и даёт <strong>ровно одну подсказку за ход</strong> из <em>одного слова</em> и <em>числа</em>.</p>
+            <p><strong>Выбор слова (защита от миссклика):</strong> Чтобы открыть карточку, <strong>нажмите и удерживайте</strong> её до заполнения шкалы. Если отпустить раньше — выбор отменится.</p>
+            <p><strong>Завершение хода:</strong> Угадывающие могут досрочно передать ход соперникам голосованием большинства.</p>
+            <p><strong>Чат:</strong> В чате общаются все участники комнаты (игроки и наблюдатели), без системного спама.</p>
         </div>
     </div>
 </div>
@@ -1476,8 +1565,8 @@
 <!-- ПОЗДРАВЛЕНИЕ ПОБЕДИТЕЛЯ -->
 <div class="winner-celebration" id="winner-celebration">
     <div class="winner-text" id="winner-text">ПОБЕДА!</div>
-    <div id="winner-subtext" style="font-size: 1.3rem; margin-bottom: 10px;"></div>
-    <div id="winner-elo-info" style="color: var(--gold); font-size: 1.1rem; margin-bottom: 25px;"></div>
+    <div id="winner-subtext" style="font-size: 1.2rem; margin-bottom: 10px;"></div>
+    <div id="winner-elo-info" style="color: var(--gold); font-size: 1.05rem; margin-bottom: 22px;"></div>
     <button class="new-game-btn" id="next-game-btn" style="max-width: 280px; padding: 14px 25px;">
         <i class="fas fa-play-circle"></i> Следующий раунд
     </button>
@@ -1485,10 +1574,11 @@
 
 <script>
     const SUPABASE_URL = 'https://poudbyptdieyifbfdtet.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_pFDRFkpxo6PlZJM2Z5ZRxQ_BXIFkfnN';
+    const SUPABASE_ANON_KEY = 'YOUR_PUBLISHABLE_KEY';
 
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const TURN_SECONDS = 90;
+    const HOLD_DURATION_MS = 650;
 
     function makeDefaultAvatarDataUrl(name) {
         const letter = ((name || 'A').trim()[0] || 'A').toUpperCase();
@@ -1536,7 +1626,6 @@
     }
 
     const wordList = [
-        // Животные, птицы, морские обитатели и насекомые
         'АИСТ', 'АКУЛА', 'БАБОЧКА', 'БЕЛКА', 'БОБЁР', 'БУЙВОЛ', 'ВЕРБЛЮД', 'ВОЛК', 'ВОРОН', 'ВЫДРА',
         'ГАЗЕЛЬ', 'ГЕПАРД', 'ГОЛУБЬ', 'ГОРИЛЛА', 'ДЕЛЬФИН', 'ДИНОЗАВР', 'ДРАКОН', 'ДЯТЕЛ', 'ЁЖ', 'ЕНОТ',
         'ЖАБА', 'ЖИРАФ', 'ЖУК', 'ЗАЯЦ', 'ЗЕБРА', 'ЗМЕЯ', 'ИГУАНА', 'КАБАН', 'КАЛЬМАР', 'КЕНГУРУ',
@@ -1546,8 +1635,6 @@
         'ПИНГВИН', 'ПОПУГАЙ', 'ПУМА', 'ПЧЕЛА', 'РЫСЬ', 'САЛАМАНДРА', 'СКАТ', 'СКОРПИОН', 'СЛОН', 'СОВА',
         'СОБАКА', 'СОКОЛ', 'СТРЕКОЗА', 'СТРАУС', 'СУРИКАТ', 'ТАРАНТУЛ', 'ТИГР', 'ТЮЛЕНЬ', 'УЛИТКА', 'ФАЗАН',
         'ФЕНИКС', 'ФЛАМИНГО', 'ХАМЕЛЕОН', 'ХОМЯК', 'ЦАПЛЯ', 'ЦИКАДА', 'ЧАЙКА', 'ЧЕПАРАХА', 'ЧЕРВЬ', 'ШАКАЛ',
-
-        // Природа, погода, космос и стихии
         'АЙСБЕРГ', 'АСТЕРОИД', 'БЕРЕГ', 'БОЛОТО', 'ВОДОПАД', 'ВОЛНА', 'ВУЛКАН', 'ГАЛАКТИКА', 'ГЕЙЗЕР', 'ГОРА',
         'ГРАД', 'ГРОЗА', 'ДЮНА', 'ДОЖДЬ', 'ЗАКАТ', 'ЗАТМЕНИЕ', 'ЗВЕЗДА', 'ЗЕМЛЯ', 'КАМЕНЬ', 'КАНЬОН',
         'КОМЕТА', 'КОСМОС', 'КРАТЕР', 'КРИСТАЛЛ', 'ЛАВИНА', 'ЛАВА', 'ЛЕДНИК', 'ЛЕС', 'ЛУНА', 'МЕТЕОР',
@@ -1555,8 +1642,6 @@
         'ПЛАНЕТА', 'ПЛЯЖ', 'ПОЛЮС', 'ПУСТЫНЯ', 'РАДУГА', 'РАССВЕТ', 'РЕКА', 'РИФ', 'РОСА', 'САВАННА',
         'СКАЛА', 'СНЕГ', 'СОЛНЦЕ', 'СТЕПЬ', 'СУМЕРКИ', 'ТАЙГА', 'ТОРНАДО', 'ТУМАН', 'УРАГАН', 'УТЕС',
         'ФЬОРД', 'ЦУНАМИ', 'ЭКВАТОР', 'ЭХО',
-
-        // Еда, напитки, фрукты и кухня
         'АНАНАС', 'АРБУЗ', 'БАЗИЛИК', 'БАНАН', 'БЕКОН', 'БЛИН', 'БУРГЕР', 'ВАНИЛЬ', 'ВАФЛЯ', 'ВИНОГРАД',
         'ВИШНЯ', 'ГРАНАТ', 'ГРИБ', 'ГРУША', 'ДЫНЯ', 'ЗЕФИР', 'ИЗЮМ', 'ИКРА', 'ИМБИРЬ', 'ЙОГУРТ',
         'КАКАО', 'КАРАМЕЛЬ', 'КАРРИ', 'КЕКС', 'КЛУБНИКА', 'КОКОС', 'КОРИЦА', 'КОФЕ', 'КРУАССАН', 'ЛАЙМ',
@@ -1565,8 +1650,6 @@
         'РИС', 'САЛАТ', 'САХАР', 'СЛИВА', 'СОЛЬ', 'СОУС', 'СТЕЙК', 'СУП', 'СУШИ', 'СЫР',
         'ТАКО', 'ТОРТ', 'ТЫКВА', 'УКРОП', 'ФАСОЛЬ', 'ФИНИК', 'ХЛЕБ', 'ЧАЙ', 'ЧЕСНОК', 'ЧИЛИ',
         'ШОКОЛАД', 'ЩАВЕЛЬ', 'ЭСПРЕССО', 'ЯБЛОКО', 'ЯГОДА', 'ЯЙЦО',
-
-        // Профессии, роли и люди
         'АДВОКАТ', 'АКТЁР', 'АРХЕОЛОГ', 'АРХИТЕКТОР', 'АСТРОНАВТ', 'БАЛЕТМЕЙСТЕР', 'БАНКИР', 'БАРИСТА', 'БОКСЁР', 'ВРАЧ',
         'ГЕОЛОГ', 'ГЛАДИАТОР', 'ДЕТЕКТИВ', 'ДИДЖЕЙ', 'ДИЗАЙНЕР', 'ДИРИЖЁР', 'ДОКТОР', 'ЖУРНАЛИСТ', 'ИНЖЕНЕР',
         'ИСТОРИК', 'КАПИТАН', 'КАСКАДЁР', 'КЛОУН', 'КОМПОЗИТОР', 'КОРОЛЬ', 'КОСМОНАВТ', 'КУЗНЕЦ', 'ЛЁТЧИК', 'МАГ',
@@ -1574,8 +1657,6 @@
         'ПОЖАРНЫЙ', 'ПРИЗРАК', 'ПРОГРАММИСТ', 'ПРОФЕССОР', 'РАЗВЕДЧИК', 'РЕЖИССЁР', 'РЕПОРТЁР', 'РЫЦАРЬ', 'САМУРАЙ', 'СКУЛЬПТОР',
         'СНАЙПЕР', 'СУДЬЯ', 'ТРЕНЕР', 'УЧЁНЫЙ', 'ФАРАОН', 'ФИЛОСОФ', 'ФОКУСНИК', 'ФОТОГРАФ', 'ХИМИК', 'ХИРУРГ',
         'ХУДОЖНИК', 'ШАХТЁР', 'ШПИОН', 'ЭКСПЕДИЦИЯ', 'ЮРИСТ',
-
-        // Технологии, наука, механизмы и предметы
         'АЛГОРИТМ', 'АНТЕННА', 'АРХИВ', 'БАТАРЕЯ', 'БИНОКЛЬ', 'БЛОК', 'БОМБА', 'БУДИЛЬНИК', 'ВЕКТОР', 'ВЕЛИК',
         'ВЕНТИЛЯТОР', 'ВИНТ', 'ВИРУС', 'ГЛОБУС', 'ГРАФИК', 'ДВИГАТЕЛЬ', 'ДИНАМИТ', 'ДИСК', 'ДРОН', 'ЗАМОК',
         'ЗЕРКАЛО', 'ЗОЛОТО', 'ЗОНТ', 'ИГЛА', 'ИНДЕКС', 'КАБЕЛЬ', 'КАМЕРА', 'КАРТА', 'КЛАВИША', 'КЛЕЙ',
@@ -1588,8 +1669,6 @@
         'ТАНК', 'ТЕЛЕСКОП', 'ТЕЛЕФОН', 'ТЕРМОС', 'ТОПОР', 'ТОРМОЗ', 'ТРОС', 'ТУРБИНА', 'УЗЕЛ', 'ФАКЕЛ',
         'ФИЛЬТР', 'ФОНАРЬ', 'ФОРМУЛА', 'ЧИП', 'ШАХМАТЫ', 'ШЕСТЕРНЯ', 'ШИФР', 'ШЛЕМ', 'ШНУР', 'ЩИТ',
         'ЭКРАН', 'ЭЛЕКТРОН', 'ЭНЕРГИЯ', 'ЯКОРЬ',
-
-        // География, города, страны и локации
         'АЛПЫ', 'АМАЗОНКА', 'АНТАРКТИДА', 'АФИНЫ', 'БАГДАД', 'БАРСЕЛОНА', 'БЕРЛИН', 'БРАЗИЛИЯ', 'ВАТИКАН', 'ВЕНЕЦИЯ',
         'ВЕНА', 'ГАВАЙИ', 'ГОЛЛИВУД', 'ГРЕЦИЯ', 'ДУБАЙ', 'ЕГИПЕТ', 'ИНДИЯ', 'ИСЛАНДИЯ', 'ИТАЛИЯ', 'КАИР',
         'КАНАДА', 'КИОТО', 'КРЕМЛЬ', 'КУБА', 'ЛАПЛАНДИЯ', 'ЛИССАБОН', 'ЛОНДОН', 'МАДРИД', 'МАРС', 'МЕКСИКА',
@@ -1597,8 +1676,6 @@
         'ПРАГА', 'РИМ', 'САХАРА', 'СЕВЕР', 'СЕУЛ', 'СИБИРЬ', 'СИДНЕЙ', 'СТАМБУЛ', 'ТАЙВАНЬ', 'ТЕХАС',
         'ТИБЕТ', 'ТОКИО', 'ТОРОНТО', 'УРАЛ', 'ФРАНЦИЯ', 'ЦЮРИХ', 'ЧИКАГО', 'ШВЕЙЦАРИЯ', 'ЭВЕРЕСТ', 'ЭЛЬБРУС',
         'ЮГ', 'ЯПОНИЯ',
-
-        // Здания, спорт, искусство, музыка и культура
         'АМФИТЕАТР', 'АРЕНА', 'АТЕЛЬЕ', 'БАЗА', 'БАЛКОН', 'БАНК', 'БАР', 'БАШНЯ', 'БИБЛИОТЕКА', 'БОЛЬНИЦА',
         'БУНКЕР', 'ВОКЗАЛ', 'ГАЛЕРЕЯ', 'ГАРАЖ', 'ДВОРЕЦ', 'ДОК', 'ЗАВОД', 'ЗАЛ', 'ЗАПОВЕДНИК', 'КАЗИНО',
         'КАФЕ', 'КИНО', 'КОЛЛЕДЖ', 'КОЛИЗЕЙ', 'КОНЦЕРТ', 'КРЕПОСТЬ', 'ЛАБОРАТОРИЯ', 'МАГАЗИН', 'МАЯК', 'МЕТРО',
@@ -1612,8 +1689,6 @@
         'КЁРЛИНГ', 'МАРАФОН', 'МЕДАЛЬ', 'МЯЧ', 'ОЛИМПИАДА', 'ПАС', 'ПЕНАЛЬТИ', 'ПЛАВАНИЕ', 'РЕКОРД', 'СЕКТОР',
         'СЕТКА', 'СНОУБОРД', 'СТАРТ', 'ТЕННИС', 'ТРАССА', 'ФЕХТОВАНИЕ', 'ФИНИШ', 'ФОЛ', 'ФУТБОЛ', 'ХОККЕЙ',
         'ШАЙБА', 'ШТАНГА',
-
-        // Абстрактные понятия, время, игры и мифология
         'АЗАРТ', 'АНОМАЛИЯ', 'БАЛАНС', 'БУДУЩЕЕ', 'ВЕРА', 'ВЗРЫВ', 'ВИДЕНИЕ', 'ВЛАСТЬ', 'ВОЙНА',
         'ВОЛШЕБСТВО', 'ВРЕМЯ', 'ВЫБОР', 'ГЕНИЙ', 'ГИПОТЕЗА', 'ГОЛОС', 'ГОРИЗОНТ', 'ГРАНИЦА', 'ДЕНЬГИ', 'ДОБРО',
         'ДОГОВОР', 'ДУХ', 'ЗАВТРА', 'ЗАГАДКА', 'ЗАКОН', 'ЗВУК', 'ЗНАК', 'ЗНАНИЕ', 'ИГРА', 'ИДЕЯ',
@@ -1638,6 +1713,11 @@
     let currentRoom = null;
     let roomPlayers = [];
     let roomChannel = null;
+    let peerCardHolds = {}; // { [cardId]: [{ userId, username }] }
+    let activeHoldTimer = null;
+    let activeHoldRaf = null;
+    let activeHoldCardId = null;
+    let isSelectingCard = false;
 
     let gameState = {
         cards: [],
@@ -1649,6 +1729,7 @@
         currentHint: null,
         hintGivenOnTurn: false,
         teamsLocked: false,
+        skipVotes: [],
         gameOver: false,
         winner: null,
         timeLeft: TURN_SECONDS,
@@ -1860,6 +1941,7 @@
             currentHint: null,
             hintGivenOnTurn: false,
             teamsLocked: Boolean(teamsLocked),
+            skipVotes: [],
             gameOver: false,
             winner: null,
             timeLeft: TURN_SECONDS,
@@ -1961,13 +2043,15 @@
             ...gameState,
             ...room.game_state,
             hintGivenOnTurn: Boolean(room.game_state?.hintGivenOnTurn ?? room.game_state?.currentHint),
-            teamsLocked: Boolean(room.game_state?.teamsLocked)
+            teamsLocked: Boolean(room.game_state?.teamsLocked),
+            skipVotes: Array.isArray(room.game_state?.skipVotes) ? room.game_state.skipVotes : []
         };
 
         await fetchRoomPlayers();
         await fetchRoomMessages();
         subscribeToRoom(code);
 
+        // Игра начинается ТОЛЬКО когда создатель нажмёт "Начать игру"
         if (room.status === 'lobby') {
             showLobbyRoomUI();
         } else {
@@ -1976,6 +2060,8 @@
     }
 
     function showLobbyRoomUI() {
+        document.getElementById('lobby-modal').style.display = 'flex';
+        document.getElementById('game-container').style.display = 'none';
         document.getElementById('lobby-choice-cards').style.display = 'none';
         document.getElementById('code-input-section').classList.remove('active');
         document.getElementById('game-lobby').style.display = 'block';
@@ -1983,6 +2069,10 @@
 
         const isCreator = currentRoom.creator_id === currentUser.id;
         document.getElementById('start-game-btn').style.display = isCreator ? 'block' : 'none';
+        document.getElementById('lobby-wait-note').textContent = isCreator
+            ? 'Вы создатель комнаты. Нажмите «Начать игру», когда все будут готовы.'
+            : 'Ожидание старта игры создателем комнаты...';
+
         renderLobbyPlayers();
     }
 
@@ -1992,7 +2082,7 @@
         document.getElementById('subtitle-room-code').textContent = currentRoom.code;
 
         const isCreator = currentRoom.creator_id === currentUser.id;
-        document.getElementById('room-creator-badge').style.display = isCreator ? 'block' : 'none';
+        document.getElementById('room-creator-badge').style.display = isCreator ? 'inline-block' : 'none';
         document.getElementById('header-room-code').textContent = currentRoom.code;
         document.getElementById('admin-panel').style.display = isCreator ? 'block' : 'none';
 
@@ -2040,8 +2130,9 @@
             .from('room_messages')
             .select('*')
             .eq('room_code', currentRoom.code)
+            .eq('msg_type', 'chat')
             .order('created_at', { ascending: true })
-            .limit(60);
+            .limit(80);
 
         if (!error && data) {
             const box = document.getElementById('chat-messages');
@@ -2057,7 +2148,28 @@
         }
 
         roomChannel = sb
-            .channel(`room-sync-${code}`)
+            .channel(`room-sync-${code}`, {
+                config: {
+                    presence: { key: currentUser.id }
+                }
+            })
+            .on('presence', { event: 'sync' }, () => {
+                const state = roomChannel.presenceState();
+                const holdsMap = {};
+                Object.entries(state).forEach(([userId, metas]) => {
+                    const latest = metas[metas.length - 1];
+                    if (latest && latest.holdingCardId !== null && latest.holdingCardId !== undefined) {
+                        const cid = latest.holdingCardId;
+                        if (!holdsMap[cid]) holdsMap[cid] = [];
+                        holdsMap[cid].push({
+                            userId,
+                            username: latest.username || 'Игрок'
+                        });
+                    }
+                });
+                peerCardHolds = holdsMap;
+                updateGameBoard();
+            })
             .on('postgres_changes', {
                 event: 'UPDATE',
                 schema: 'public',
@@ -2071,7 +2183,8 @@
                     ...gameState,
                     ...updatedRoom.game_state,
                     hintGivenOnTurn: Boolean(updatedRoom.game_state?.hintGivenOnTurn ?? updatedRoom.game_state?.currentHint),
-                    teamsLocked: Boolean(updatedRoom.game_state?.teamsLocked)
+                    teamsLocked: Boolean(updatedRoom.game_state?.teamsLocked),
+                    skipVotes: Array.isArray(updatedRoom.game_state?.skipVotes) ? updatedRoom.game_state.skipVotes : []
                 };
 
                 if (prevStatus === 'lobby' && updatedRoom.status === 'playing') {
@@ -2079,6 +2192,8 @@
                 } else if (updatedRoom.status !== 'lobby') {
                     updatePauseOverlayUI();
                     syncAllUI();
+                } else {
+                    showLobbyRoomUI();
                 }
 
                 if (gameState.gameOver && gameState.winner) {
@@ -2101,11 +2216,30 @@
                 table: 'room_messages',
                 filter: `room_code=eq.${code}`
             }, (payload) => {
+                // Показываем в чате ТОЛЬКО сообщения людей (игроков и наблюдателей)
+                if (payload.new.msg_type !== 'chat') return;
                 const box = document.getElementById('chat-messages');
                 appendChatMessageDOM(payload.new);
                 box.scrollTop = box.scrollHeight;
             })
-            .subscribe();
+            .subscribe(async (status) => {
+                if (status === 'SUBSCRIBED') {
+                    await roomChannel.track({
+                        username: currentProfile?.username || 'Агент',
+                        holdingCardId: null
+                    });
+                }
+            });
+    }
+
+    async function trackHoldingCard(cardId) {
+        if (!roomChannel) return;
+        try {
+            await roomChannel.track({
+                username: currentProfile?.username || 'Агент',
+                holdingCardId: cardId
+            });
+        } catch (_) {}
     }
 
     async function pushGameState() {
@@ -2119,33 +2253,36 @@
             .eq('code', currentRoom.code);
     }
 
-    async function sendRoomMessage(text, msgType = 'chat') {
+    async function sendChatMessage(text) {
         if (!currentRoom || !text.trim()) return;
         await sb.from('room_messages').insert({
             room_code: currentRoom.code,
             user_id: currentUser.id,
             sender_name: currentProfile?.username || 'Агент',
             message: text.trim(),
-            msg_type: msgType
+            msg_type: 'chat'
         });
     }
 
     function appendChatMessageDOM(msg) {
+        if (msg.msg_type !== 'chat') return;
         const box = document.getElementById('chat-messages');
         const el = document.createElement('div');
-        if (msg.msg_type === 'system') {
-            el.className = 'message system';
-            el.textContent = msg.message;
-        } else if (msg.msg_type === 'hint') {
-            el.className = 'message hint';
-            el.textContent = msg.message;
-        } else if (msg.msg_type === 'game-start') {
-            el.className = 'message game-start';
-            el.textContent = msg.message;
-        } else {
-            el.className = 'message';
-            el.innerHTML = `<strong>${escapeHtml(msg.sender_name)}:</strong> ${escapeHtml(msg.message)}`;
+
+        const senderPlayer = roomPlayers.find(p => p.user_id === msg.user_id);
+        let teamClass = 'spectator-sender';
+        let roleBadge = 'Наблюдатель';
+
+        if (senderPlayer?.team === 'blue') {
+            teamClass = 'blue-sender';
+            roleBadge = senderPlayer.role === 'master' ? 'Синие • Мастер' : 'Синие';
+        } else if (senderPlayer?.team === 'red') {
+            teamClass = 'red-sender';
+            roleBadge = senderPlayer.role === 'master' ? 'Красные • Мастер' : 'Красные';
         }
+
+        el.className = `message ${teamClass}`;
+        el.innerHTML = `<strong>${escapeHtml(msg.sender_name)}</strong><span class="chat-role-badge">${roleBadge}</span>: ${escapeHtml(msg.message)}`;
         box.appendChild(el);
     }
 
@@ -2175,7 +2312,7 @@
                     <div>
                         <span style="font-weight: bold;">${escapeHtml(prof.username || 'Агент')}</span>
                         <span class="elo-badge">${prof.elo || 1000} ELO</span>
-                        ${isRoomOwner ? '<span style="color: #9b59b6; font-size: 0.8rem; margin-left: 6px;">(Создатель)</span>' : ''}
+                        ${isRoomOwner ? '<span style="color: #9b59b6; font-size: 0.78rem; margin-left: 6px;">(Создатель)</span>' : ''}
                     </div>
                 </div>
                 ${isCreator && !isRoomOwner ? `<button class="leave-btn btn-sm" onclick="kickLobbyPlayer('${p.user_id}')"><i class="fas fa-times"></i></button>` : ''}
@@ -2196,16 +2333,16 @@
         gameState.cardsBlocked = true;
         gameState.hintGivenOnTurn = false;
         gameState.currentHint = null;
+        gameState.skipVotes = [];
 
         await sb
             .from('rooms')
             .update({ status: 'playing', game_state: gameState })
             .eq('code', currentRoom.code);
-
-        await sendRoomMessage(`🚀 Игра #${gameState.gameNumber} началась! Выберите команду и шпион-мастера.`, 'game-start');
     }
 
     async function leaveRoomCompletely() {
+        cancelCardHold();
         if (currentRoom && currentUser) {
             await sb.from('room_players').delete().eq('room_code', currentRoom.code).eq('user_id', currentUser.id);
         }
@@ -2215,6 +2352,7 @@
         }
         currentRoom = null;
         roomPlayers = [];
+        peerCardHolds = {};
         document.getElementById('game-container').style.display = 'none';
         document.getElementById('winner-celebration').classList.remove('active');
         document.getElementById('game-paused-overlay').classList.remove('active');
@@ -2230,13 +2368,17 @@
             return;
         }
 
+        // Убираем голос игрока за скип при смене команды
+        if (gameState.skipVotes?.includes(currentUser.id)) {
+            gameState.skipVotes = gameState.skipVotes.filter(id => id !== currentUser.id);
+            await pushGameState();
+        }
+
         await sb
             .from('room_players')
             .update({ team, role: 'agent' })
             .eq('room_code', currentRoom.code)
             .eq('user_id', currentUser.id);
-
-        await sendRoomMessage(`${currentProfile.username} присоединился(ась) к ${team === 'blue' ? 'синей' : 'красной'} команде.`, 'system');
     }
 
     async function leaveTeam() {
@@ -2246,13 +2388,16 @@
             return;
         }
 
+        if (gameState.skipVotes?.includes(currentUser.id)) {
+            gameState.skipVotes = gameState.skipVotes.filter(id => id !== currentUser.id);
+            await pushGameState();
+        }
+
         await sb
             .from('room_players')
             .update({ team: null, role: 'agent' })
             .eq('room_code', currentRoom.code)
             .eq('user_id', currentUser.id);
-
-        await sendRoomMessage(`${currentProfile.username} вышел(ла) из команды.`, 'system');
     }
 
     async function becomeMaster() {
@@ -2261,6 +2406,11 @@
         if (gameState.teamsLocked) {
             alert('Переход ролей и команд заблокирован создателем комнаты!');
             return;
+        }
+
+        if (gameState.skipVotes?.includes(currentUser.id)) {
+            gameState.skipVotes = gameState.skipVotes.filter(id => id !== currentUser.id);
+            await pushGameState();
         }
 
         await sb
@@ -2274,8 +2424,6 @@
             .update({ role: 'master' })
             .eq('room_code', currentRoom.code)
             .eq('user_id', currentUser.id);
-
-        await sendRoomMessage(`👑 ${currentProfile.username} стал(а) шпион-мастером ${me.team === 'blue' ? 'синей' : 'красной'} команды.`, 'system');
     }
 
     function renderTeamsPlayers() {
@@ -2301,6 +2449,74 @@
             if (p.team === 'blue') blueBox.appendChild(el);
             if (p.team === 'red') redBox.appendChild(el);
         });
+    }
+
+    function getActiveTeamAgents() {
+        return roomPlayers.filter(
+            p => p.team === gameState.currentTeam && p.role === 'agent'
+        );
+    }
+
+    function updateSkipTurnControls() {
+        const skipBtn = document.getElementById('skip-turn-btn');
+        const votesSpan = document.getElementById('skip-votes-count');
+        if (!skipBtn || !votesSpan) return;
+
+        const me = getMyPlayerRecord();
+        const isGuessingPhase =
+            !gameState.gameOver &&
+            currentRoom?.status === 'playing' &&
+            !gameState.cardsBlocked;
+
+        const isActiveAgent =
+            isGuessingPhase &&
+            me &&
+            me.team === gameState.currentTeam &&
+            me.role === 'agent';
+
+        if (!isActiveAgent) {
+            skipBtn.style.display = 'none';
+            return;
+        }
+
+        const activeAgents = getActiveTeamAgents();
+        const activeAgentIds = new Set(activeAgents.map(a => a.user_id));
+        const validVotes = (gameState.skipVotes || []).filter(uid => activeAgentIds.has(uid));
+        const neededVotes = Math.floor(activeAgents.length / 2) + 1;
+        const iVoted = validVotes.includes(currentUser.id);
+
+        skipBtn.style.display = 'block';
+        skipBtn.classList.toggle('voted', iVoted);
+        votesSpan.textContent = `${validVotes.length}/${neededVotes}`;
+    }
+
+    async function toggleSkipTurnVote() {
+        const me = getMyPlayerRecord();
+        if (!me || me.role !== 'agent' || me.team !== gameState.currentTeam || gameState.cardsBlocked || gameState.gameOver) {
+            return;
+        }
+
+        const activeAgents = getActiveTeamAgents();
+        if (activeAgents.length === 0) return;
+
+        const activeAgentIds = new Set(activeAgents.map(a => a.user_id));
+        let votes = (gameState.skipVotes || []).filter(uid => activeAgentIds.has(uid));
+
+        if (votes.includes(currentUser.id)) {
+            votes = votes.filter(uid => uid !== currentUser.id);
+        } else {
+            votes.push(currentUser.id);
+        }
+
+        const neededVotes = Math.floor(activeAgents.length / 2) + 1;
+        if (votes.length >= neededVotes) {
+            cancelCardHold();
+            switchTurnState();
+        } else {
+            gameState.skipVotes = votes;
+        }
+
+        await pushGameState();
     }
 
     function updateMyRoleControls() {
@@ -2336,6 +2552,7 @@
             masterBtns.style.display = 'none';
             leaveBtn.style.display = 'none';
             hintControls.style.display = 'none';
+            updateSkipTurnControls();
             return;
         }
 
@@ -2374,6 +2591,8 @@
         } else {
             hintNote.textContent = 'На этот ход доступна ровно 1 подсказка.';
         }
+
+        updateSkipTurnControls();
     }
 
     function syncAllUI() {
@@ -2386,6 +2605,55 @@
         updateMyRoleControls();
     }
 
+    function startCardHold(cardId, cardEl) {
+        if (isSelectingCard) return;
+        cancelCardHold();
+
+        activeHoldCardId = cardId;
+        cardEl.classList.add('holding');
+        const bar = cardEl.querySelector('.card-hold-progress');
+        const startTime = performance.now();
+
+        trackHoldingCard(cardId);
+
+        function step(now) {
+            if (activeHoldCardId !== cardId) return;
+            const elapsed = now - startTime;
+            const pct = Math.min(100, (elapsed / HOLD_DURATION_MS) * 100);
+            if (bar) bar.style.width = `${pct}%`;
+
+            if (elapsed >= HOLD_DURATION_MS) {
+                const targetId = activeHoldCardId;
+                cancelCardHold();
+                selectCard(targetId);
+                return;
+            }
+            activeHoldRaf = requestAnimationFrame(step);
+        }
+
+        activeHoldRaf = requestAnimationFrame(step);
+    }
+
+    function cancelCardHold() {
+        if (activeHoldRaf) {
+            cancelAnimationFrame(activeHoldRaf);
+            activeHoldRaf = null;
+        }
+        if (activeHoldTimer) {
+            clearTimeout(activeHoldTimer);
+            activeHoldTimer = null;
+        }
+        if (activeHoldCardId !== null) {
+            activeHoldCardId = null;
+            trackHoldingCard(null);
+            document.querySelectorAll('.card.holding').forEach(el => {
+                el.classList.remove('holding');
+                const bar = el.querySelector('.card-hold-progress');
+                if (bar) bar.style.width = '0%';
+            });
+        }
+    }
+
     function updateGameBoard() {
         const container = document.getElementById('cards-container');
         if (!container) return;
@@ -2393,6 +2661,18 @@
 
         const me = getMyPlayerRecord();
         const isMaster = me?.role === 'master';
+        const canGuessNow =
+            !gameState.gameOver &&
+            currentRoom?.status === 'playing' &&
+            me &&
+            me.team === gameState.currentTeam &&
+            me.role === 'agent' &&
+            !gameState.cardsBlocked;
+
+        const holdBanner = document.getElementById('hold-hint-banner');
+        if (holdBanner) {
+            holdBanner.style.display = canGuessNow ? 'block' : 'none';
+        }
 
         gameState.cards.forEach(card => {
             const cardEl = document.createElement('div');
@@ -2404,17 +2684,20 @@
 
             if (card.revealed) cardEl.classList.add('selected');
 
-            const canClick =
-                !gameState.gameOver &&
-                currentRoom?.status === 'playing' &&
-                me &&
-                me.team === gameState.currentTeam &&
-                me.role === 'agent' &&
-                !gameState.cardsBlocked &&
-                !card.revealed;
+            const canClick = canGuessNow && !card.revealed;
 
             if (!canClick) cardEl.classList.add('disabled');
             if (gameState.cardsBlocked && !card.revealed && !isMaster) cardEl.classList.add('blocked');
+
+            // Отображение игроков, которые сейчас зажимают это слово
+            const holders = peerCardHolds[card.id] || [];
+            if (!card.revealed && holders.length > 0) {
+                cardEl.classList.add('peer-holding');
+                const tag = document.createElement('div');
+                tag.className = 'card-holder-tag';
+                tag.textContent = '👆 ' + holders.map(h => h.username).join(', ');
+                cardEl.appendChild(tag);
+            }
 
             const wordSpan = document.createElement('div');
             wordSpan.className = 'word';
@@ -2422,8 +2705,21 @@
             cardEl.appendChild(wordSpan);
 
             if (canClick) {
-                cardEl.addEventListener('click', () => selectCard(card.id));
+                const progressBar = document.createElement('div');
+                progressBar.className = 'card-hold-progress';
+                cardEl.appendChild(progressBar);
+
+                cardEl.addEventListener('pointerdown', (e) => {
+                    if (e.button !== undefined && e.button !== 0) return;
+                    e.preventDefault();
+                    startCardHold(card.id, cardEl);
+                });
+                cardEl.addEventListener('pointerup', cancelCardHold);
+                cardEl.addEventListener('pointerleave', cancelCardHold);
+                cardEl.addEventListener('pointercancel', cancelCardHold);
+                cardEl.addEventListener('contextmenu', (e) => e.preventDefault());
             }
+
             container.appendChild(cardEl);
         });
     }
@@ -2443,8 +2739,8 @@
             return;
         }
         const phaseText = gameState.cardsBlocked
-            ? ' (ход шпион-мастера — ждём 1 подсказку)'
-            : ' (ход агентов — выбор слов)';
+            ? ' (ход шпион-мастера)'
+            : ' (угадывают агенты)';
 
         if (gameState.currentTeam === 'blue') {
             ind.textContent = 'Ход синей команды' + phaseText;
@@ -2497,6 +2793,7 @@
         gameState.currentHint = { word, number: num, team: me.team };
         gameState.hintGivenOnTurn = true;
         gameState.cardsBlocked = false;
+        gameState.skipVotes = [];
         gameState.timeLeft = TURN_SECONDS;
         gameState.timerRunning = true;
         gameState.hintsHistory.push({
@@ -2511,45 +2808,48 @@
 
         updateMyRoleControls();
         await pushGameState();
-        await sendRoomMessage(`💡 Подсказка (${me.team === 'blue' ? 'Синие' : 'Красные'}): "${word}" — ${num}`, 'hint');
     }
 
     async function selectCard(cardId) {
+        if (isSelectingCard) return;
         const me = getMyPlayerRecord();
         if (!me || me.role !== 'agent' || me.team !== gameState.currentTeam || gameState.cardsBlocked || gameState.gameOver) return;
 
         const card = gameState.cards.find(c => c.id === cardId);
         if (!card || card.revealed) return;
 
-        card.revealed = true;
-        await sendRoomMessage(`${currentProfile.username} открыл(а) карту «${card.word}»`, 'system');
+        isSelectingCard = true;
+        try {
+            card.revealed = true;
 
-        if (card.type === 'blue') {
-            gameState.blueScore++;
-            gameState.blueCardsRemaining--;
-            if (gameState.blueCardsRemaining === 0) {
-                await finishMatch('blue');
+            if (card.type === 'blue') {
+                gameState.blueScore++;
+                gameState.blueCardsRemaining--;
+                if (gameState.blueCardsRemaining === 0) {
+                    await finishMatch('blue');
+                    return;
+                }
+                if (gameState.currentTeam !== 'blue') switchTurnState();
+            } else if (card.type === 'red') {
+                gameState.redScore++;
+                gameState.redCardsRemaining--;
+                if (gameState.redCardsRemaining === 0) {
+                    await finishMatch('red');
+                    return;
+                }
+                if (gameState.currentTeam !== 'red') switchTurnState();
+            } else if (card.type === 'neutral') {
+                switchTurnState();
+            } else if (card.type === 'assassin') {
+                const winner = gameState.currentTeam === 'blue' ? 'red' : 'blue';
+                await finishMatch(winner);
                 return;
             }
-            if (gameState.currentTeam !== 'blue') switchTurnState();
-        } else if (card.type === 'red') {
-            gameState.redScore++;
-            gameState.redCardsRemaining--;
-            if (gameState.redCardsRemaining === 0) {
-                await finishMatch('red');
-                return;
-            }
-            if (gameState.currentTeam !== 'red') switchTurnState();
-        } else if (card.type === 'neutral') {
-            switchTurnState();
-        } else if (card.type === 'assassin') {
-            const winner = gameState.currentTeam === 'blue' ? 'red' : 'blue';
-            await sendRoomMessage(`💀 Открыт Убийца! Победа команды ${winner === 'blue' ? 'Синих' : 'Красных'}!`, 'system');
-            await finishMatch(winner);
-            return;
+
+            await pushGameState();
+        } finally {
+            isSelectingCard = false;
         }
-
-        await pushGameState();
     }
 
     function switchTurnState() {
@@ -2557,6 +2857,7 @@
         gameState.cardsBlocked = true;
         gameState.currentHint = null;
         gameState.hintGivenOnTurn = false;
+        gameState.skipVotes = [];
         gameState.timerRunning = true;
         gameState.timeLeft = TURN_SECONDS;
     }
@@ -2565,6 +2866,7 @@
         gameState.gameOver = true;
         gameState.winner = winningTeam;
         gameState.timerRunning = false;
+        gameState.skipVotes = [];
         gameState.cards.forEach(c => c.revealed = true);
 
         if (!gameState.eloSettled) {
@@ -2663,8 +2965,6 @@
             .from('rooms')
             .update({ status: 'playing', game_state: gameState })
             .eq('code', currentRoom.code);
-
-        await sendRoomMessage(`🔄 Начался раунд #${nextNum}! Назначьте новых шпион-мастеров.`, 'game-start');
     }
 
     function updateTimerUI() {
@@ -2687,12 +2987,8 @@
                 gameState.timeLeft--;
                 updateTimerUI();
                 if (gameState.timeLeft === 0 && currentRoom.creator_id === currentUser?.id) {
-                    const phaseMsg = gameState.cardsBlocked
-                        ? '⏰ Время мастера вышло! Ход переходит другой команде.'
-                        : '⏰ Время агентов вышло! Ход переходит другой команде.';
                     switchTurnState();
                     await pushGameState();
-                    await sendRoomMessage(phaseMsg, 'system');
                 }
             }
         }
@@ -2703,12 +2999,6 @@
         gameState.teamsLocked = !gameState.teamsLocked;
         updateMyRoleControls();
         await pushGameState();
-        await sendRoomMessage(
-            gameState.teamsLocked
-                ? '🔒 Создатель закрыл переход между командами'
-                : '🔓 Создатель открыл переход между командами',
-            'system'
-        );
     }
 
     async function adminShuffleTeams() {
@@ -2723,14 +3013,12 @@
                 .update({ team, role: 'agent' })
                 .eq('id', shuffled[i].id);
         }
-        await sendRoomMessage('🔀 Создатель комнаты перемешал команды!', 'system');
     }
 
     async function adminTogglePause() {
         if (currentRoom?.creator_id !== currentUser?.id) return;
         const newStatus = currentRoom.status === 'paused' ? 'playing' : 'paused';
         await sb.from('rooms').update({ status: newStatus }).eq('code', currentRoom.code);
-        await sendRoomMessage(newStatus === 'paused' ? '⏸️ Игра на паузе' : '▶️ Игра продолжена', 'system');
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
@@ -2834,9 +3122,7 @@
                 const { data, error } = await sb.auth.signUp({
                     email,
                     password,
-                    options: {
-                        data: { username }
-                    }
+                    options: { data: { username } }
                 });
                 if (error) {
                     errBox.textContent = 'Ошибка регистрации: ' + error.message;
@@ -2844,7 +3130,7 @@
                 }
                 if (data.user) {
                     if (!data.session) {
-                        errBox.textContent = 'Аккаунт создан, но требуется подтверждение почты. Выполните SQL или отключите Confirm email в Supabase.';
+                        errBox.textContent = 'Аккаунт создан, но требуется подтверждение почты.';
                         return;
                     }
                     currentUser = data.user;
@@ -2855,13 +3141,9 @@
             } else {
                 const { data, error } = await sb.auth.signInWithPassword({ email, password });
                 if (error) {
-                    if (error.message.includes('Email not confirmed')) {
-                        errBox.textContent = 'Почта не подтверждена. Отключите Confirm email в Supabase или выполните SQL.';
-                    } else if (error.message.includes('Invalid login credentials')) {
-                        errBox.textContent = 'Неверный email или пароль (проверьте раскладку/пароль через глазик).';
-                    } else {
-                        errBox.textContent = 'Ошибка входа: ' + error.message;
-                    }
+                    errBox.textContent = error.message.includes('Invalid login credentials')
+                        ? 'Неверный email или пароль.'
+                        : 'Ошибка входа: ' + error.message;
                     return;
                 }
                 currentUser = data.user;
@@ -2906,13 +3188,14 @@
         document.getElementById('join-red-btn').onclick = () => joinTeam('red');
         document.getElementById('leave-team-btn').onclick = leaveTeam;
         document.getElementById('become-master-btn').onclick = becomeMaster;
+        document.getElementById('skip-turn-btn').onclick = toggleSkipTurnVote;
         document.getElementById('give-hint-btn').onclick = giveHint;
         document.getElementById('next-game-btn').onclick = startNextRound;
 
         document.getElementById('send-chat-btn').onclick = async () => {
             const inp = document.getElementById('chat-input');
             if (inp.value.trim()) {
-                await sendRoomMessage(inp.value, 'chat');
+                await sendChatMessage(inp.value);
                 inp.value = '';
             }
         };
@@ -2934,6 +3217,9 @@
         document.getElementById('reset-game-btn').onclick = () => {
             if (confirm('Сгенерировать новое поле для текущего раунда?')) startNextRound();
         };
+
+        window.addEventListener('pointerup', cancelCardHold);
+        window.addEventListener('blur', cancelCardHold);
     });
 </script>
 </body>
