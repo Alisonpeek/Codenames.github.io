@@ -510,6 +510,23 @@
             margin-top: 8px;
         }
 
+        .hint-status-note {
+            font-size: 0.82rem;
+            color: var(--gold);
+            margin-top: 6px;
+        }
+
+        .teams-lock-banner {
+            font-size: 0.82rem;
+            color: #ff7675;
+            background: rgba(231, 76, 60, 0.15);
+            border: 1px solid rgba(231, 76, 60, 0.4);
+            padding: 6px 10px;
+            border-radius: 6px;
+            margin-top: 8px;
+            display: none;
+        }
+
         .current-hint {
             background: linear-gradient(135deg, rgba(143, 148, 251, 0.3), rgba(78, 84, 200, 0.2));
             padding: 12px;
@@ -540,7 +557,7 @@
         .hint-item.red { border-left-color: var(--red-team); }
 
         .timer {
-            font-size: clamp(1.4rem, 2.5vw, 1.9rem);
+            font-size: clamp(1.2rem, 2.2vw, 1.6rem);
             font-weight: bold;
             text-align: center;
             padding: 10px;
@@ -666,7 +683,6 @@
             margin-bottom: 10px;
         }
 
-        /* МОДАЛЬНЫЕ ОКНА И ЛОББИ */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -728,7 +744,6 @@
             text-align: left;
         }
 
-        /* ЗАГРУЗКА СВОЕГО АВАТАРА */
         .avatar-upload-box {
             display: flex;
             align-items: center;
@@ -935,7 +950,6 @@
             padding: 5px;
         }
 
-        /* ИСТОРИЯ МАТЧЕЙ И СТАТИСТИКА */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -992,7 +1006,6 @@
         .elo-delta.pos { color: var(--green); font-weight: bold; }
         .elo-delta.neg { color: var(--red-team); font-weight: bold; }
 
-        /* ПАНЕЛЬ АДМИНА */
         .admin-panel {
             position: fixed;
             top: 20px;
@@ -1017,7 +1030,7 @@
             background: linear-gradient(135deg, var(--panel-bg), #1a335a);
             border-radius: 10px;
             padding: 16px;
-            min-width: 260px;
+            min-width: 270px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
             border: 1px solid rgba(143, 148, 251, 0.3);
             display: none;
@@ -1065,6 +1078,7 @@
             z-index: 200;
             flex-direction: column;
             text-align: center;
+            padding: 20px;
         }
 
         .game-paused-overlay.active { display: flex; }
@@ -1122,7 +1136,6 @@
             Мультиплеер в реальном времени • Рейтинг ELO • История матчей
         </p>
 
-        <!-- СЕКЦИЯ ВХОДА И РЕГИСТРАЦИИ -->
         <div class="auth-box" id="auth-section">
             <div class="auth-tabs">
                 <div class="auth-tab active" id="tab-login">Вход</div>
@@ -1166,7 +1179,6 @@
             </form>
         </div>
 
-        <!-- СЕКЦИЯ ВЫБОРА КОМНАТЫ (ПОСЛЕ ВХОДА) -->
         <div id="room-select-section" style="display: none;">
             <div class="profile-header-bar">
                 <div class="profile-summary">
@@ -1347,6 +1359,10 @@
                         <p><strong>Команда:</strong> Не выбрана</p>
                     </div>
 
+                    <div class="teams-lock-banner" id="teams-lock-banner">
+                        <i class="fas fa-lock"></i> Лидер комнаты закрыл переход между командами
+                    </div>
+
                     <div class="role-selector">
                         <button class="join-btn role-btn" id="join-blue-btn">
                             <i class="fas fa-shield-alt"></i> Синие
@@ -1373,6 +1389,7 @@
                             <input type="number" id="hint-number" placeholder="Количество слов (0+)" min="0" max="9">
                             <button class="hint-btn" id="give-hint-btn">Отправить подсказку</button>
                         </div>
+                        <div class="hint-status-note" id="hint-status-note"></div>
                     </div>
 
                     <button class="rules-btn-main" id="rules-btn-main">
@@ -1411,6 +1428,10 @@
         <div class="admin-controls" id="admin-controls">
             <h3 style="color: #8f94fb;"><i class="fas fa-user-shield"></i> Админ комнаты</h3>
             <div class="admin-buttons">
+                <button class="admin-btn" id="lock-teams-btn">
+                    <i class="fas fa-lock" id="lock-teams-icon"></i>
+                    <span id="lock-teams-text">Закрыть команды</span>
+                </button>
                 <button class="admin-btn" id="shuffle-teams-btn">
                     <i class="fas fa-random"></i> Перемешать команды
                 </button>
@@ -1432,7 +1453,10 @@
 <!-- ОКНО ПАУЗЫ -->
 <div class="game-paused-overlay" id="game-paused-overlay">
     <div style="font-size: 3.5rem; font-weight: bold; color: var(--gold);">ПАУЗА</div>
-    <p style="color: #ccc; margin-top: 10px;">Создатель комнаты приостановил игру</p>
+    <p style="color: #ccc; margin-top: 10px; margin-bottom: 20px;">Создатель комнаты приостановил игру</p>
+    <button class="join-btn" id="resume-pause-btn" style="display: none; max-width: 260px; padding: 14px 22px;">
+        <i class="fas fa-play"></i> Снять паузу
+    </button>
 </div>
 
 <!-- ОКНО ПРАВИЛ -->
@@ -1442,7 +1466,7 @@
         <h2><i class="fas fa-book"></i> Правила игры Codenames</h2>
         <div style="line-height: 1.7; color: #ddd;">
             <p><strong>Цель:</strong> Первыми открыть всех агентов своего цвета на поле 5×5.</p>
-            <p><strong>Шпион-мастер (👑):</strong> Видит цвета всех карточек и даёт подсказку из <em>одного слова</em> и <em>числа</em>.</p>
+            <p><strong>Шпион-мастер (👑):</strong> Видит цвета всех карточек и даёт <strong>ровно одну подсказку за ход</strong> из <em>одного слова</em> и <em>числа</em>. На время подсказки у мастера идёт такой же таймер, как у игроков.</p>
             <p><strong>Полевые агенты:</strong> Обсуждают подсказку в чате и открывают карточки. Ошибка или выбор нейтральной карты передаёт ход соперникам. Выбор чёрного <strong>Убийцы</strong> приводит к мгновенному поражению.</p>
             <p><strong>Рейтинг ELO:</strong> После завершения партии победители получают прибавку к рейтингу ELO, а матч записывается в историю каждого участника.</p>
         </div>
@@ -1460,17 +1484,12 @@
 </div>
 
 <script>
-    // =========================================================================
-    // 1. ВСТАВЬ СЮДА СВОЙ КЛЮЧ ИЗ SUPABASE (Project Settings -> API -> Project API keys)
-    // =========================================================================
     const SUPABASE_URL = 'https://poudbyptdieyifbfdtet.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_pFDRFkpxo6PlZJM2Z5ZRxQ_BXIFkfnN';
 
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const TURN_SECONDS = 90;
 
-    // =========================================================================
-    // 2. АВАТАРЫ (ЛОКАЛЬНЫЙ SVG БЕЗ ВНЕШНИХ ЗАПРОСОВ + ЗАГРУЗКА СВОЕГО ФОТО)
-    // =========================================================================
     function makeDefaultAvatarDataUrl(name) {
         const letter = ((name || 'A').trim()[0] || 'A').toUpperCase();
         const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
@@ -1517,37 +1536,100 @@
     }
 
     const wordList = [
-        'АИСТ', 'АКУЛА', 'БАБОЧКА', 'БЕЛКА', 'ВОЛК', 'ВОРОН', 'ДЕЛЬФИН', 'ДИНОЗАВР', 'ДРАКОН', 'ЕНОТ',
-        'ЖИРАФ', 'ЗЕБРА', 'ЗМЕЯ', 'КЕНГУРУ', 'КИТ', 'КОБРА', 'КОНЬ', 'КОШКА', 'КРАБ', 'КРОКОДИЛ',
-        'ЛЕВ', 'ЛЕОПАРД', 'ЛИСА', 'МЕДВЕДЬ', 'НОСОРОГ', 'ОРЁЛ', 'ОСМИНОГ', 'ПАНДА', 'ПАУК', 'ПИНГВИН',
-        'ПОПУГАЙ', 'ПЧЕЛА', 'РЫСЬ', 'СКОРПИОН', 'СЛОН', 'СОВА', 'СОБАКА', 'ТИГР', 'ФЕНИКС', 'ХАМЕЛЕОН',
-        'АЙСБЕРГ', 'БЕРЕГ', 'БОЛОТО', 'ВОДОПАД', 'ВОЛНА', 'ВУЛКАН', 'ГОРА', 'ГРОЗА', 'ДОЖДЬ', 'ЗАКАТ',
-        'ЗВЕЗДА', 'ЗЕМЛЯ', 'КАМЕНЬ', 'КОСМОС', 'КРИСТАЛЛ', 'ЛАВИНА', 'ЛЕДНИК', 'ЛЕС', 'ЛУНА', 'МОЛНИЯ',
-        'МОРЕ', 'ОАЗИС', 'ОБЛАКО', 'ОГОНЬ', 'ОЗЕРО', 'ОКЕАН', 'ОСТРОВ', 'ПЕЩЕРА', 'ПЛЯЖ', 'ПУСТЫНЯ',
-        'РАДУГА', 'РЕКА', 'СКАЛА', 'СНЕГ', 'СОЛНЦЕ', 'ТОРНАДО', 'ТУМАН', 'УРАГАН', 'ЦУНАМИ', 'ЭКВАТОР',
-        'АНАНАС', 'АРБУЗ', 'БАНАН', 'ВИНОГРАД', 'ГРАНАТ', 'ГРИБ', 'ЗЕФИР', 'ИКРА', 'КАКАО', 'КАРАМЕЛЬ',
-        'КЛУБНИКА', 'КОФЕ', 'КРУАССАН', 'ЛИМОН', 'МЁД', 'МОЛОКО', 'МОРОЖЕНОЕ', 'ОРЕХ', 'ПЕРЕЦ', 'ПИЦЦА',
-        'САХАР', 'СОЛЬ', 'СУШИ', 'СЫР', 'ТОРТ', 'ЧАЙ', 'ЧЕСНОК', 'ШОКОЛАД', 'ЯБЛОКО', 'ЯГОДА',
-        'АДВОКАТ', 'АКТЁР', 'АРХИТЕКТОР', 'АСТРОНАВТ', 'БАНКИР', 'ВРАЧ', 'ДЕТЕКТИВ', 'ДИЗАЙНЕР', 'ИНЖЕНЕР', 'КАПИТАН',
-        'КЛОУН', 'КОРОЛЬ', 'КУЗНЕЦ', 'ЛЁТЧИК', 'МАГ', 'МЕХАНИК', 'МУЗЫКАНТ', 'НИНДЗЯ', 'ОХОТНИК', 'ПИРАТ',
-        'ПОВАР', 'ПОЛИЦЕЙСКИЙ', 'ПРИЗРАК', 'ПРОГРАММИСТ', 'РАЗВЕДЧИК', 'РЕЖИССЁР', 'РЫЦАРЬ', 'СНАЙПЕР', 'СУДЬЯ', 'УЧЁНЫЙ',
-        'ФОКУСНИК', 'ХИРУРГ', 'ХУДОЖНИК', 'ШАХТЁР', 'ШПИОН', 'АЛГОРИТМ', 'АНТЕННА', 'БАТАРЕЯ', 'БЛОК', 'ВИРУС',
-        'ДВИГАТЕЛЬ', 'ДИСК', 'ДРОН', 'ЗАМОК', 'ЗЕРКАЛО', 'КАБЕЛЬ', 'КАМЕРА', 'КАРТА', 'КЛЮЧ', 'КОД',
-        'КОЛЕСО', 'КОМПАС', 'КОМПЬЮТЕР', 'КОРАБЛЬ', 'КОРОНА', 'ЛАЗЕР', 'МАГНИТ', 'МАСКА', 'МЕЧ', 'МИКРОСКОП',
-        'МОСТ', 'МОТОР', 'НАУШНИКИ', 'ОРУЖИЕ', 'ПАРОЛЬ', 'ПОЕЗД', 'ПОРТАЛ', 'ПРИБОР', 'ПРОЦЕССОР', 'ПУЛЬТ',
-        'РАДАР', 'РАКЕТА', 'РЕАКТОР', 'РОБОТ', 'САМОЛЁТ', 'СВЕТ', 'СЕЙФ', 'СЕРВЕР', 'СЕТЬ', 'СИГНАЛ',
-        'СКАНЕР', 'СПУТНИК', 'СТАНЦИЯ', 'СТЕКЛО', 'ТАНК', 'ТЕЛЕСКОП', 'ТЕЛЕФОН', 'ТОРМОЗ', 'ТУРБИНА', 'ЩИТ',
-        'ЭКРАН', 'ЭНЕРГИЯ', 'ЯКОРЬ', 'АФИНЫ', 'БЕРЛИН', 'ВАТИКАН', 'ВЕНЕЦИЯ', 'ГАВАЙИ', 'ГОЛЛИВУД', 'ЕГИПЕТ',
-        'ЛОНДОН', 'МАДРИД', 'МАРС', 'МЕКСИКА', 'МОСКВА', 'НЬЮ-ЙОРК', 'ОЛИМП', 'ПАРИЖ', 'ПЕКИН', 'ПИРАМИДА',
-        'РИМ', 'СИБИРЬ', 'ТОКИО', 'БАНК', 'БИБЛИОТЕКА', 'БОЛЬНИЦА', 'БУНКЕР', 'ВОКЗАЛ', 'ДВОРЕЦ', 'ЗАВОД',
-        'КАЗИНО', 'КРЕПОСТЬ', 'ЛАБОРАТОРИЯ', 'МУЗЕЙ', 'ОТЕЛЬ', 'ПАРК', 'ПОРТ', 'СТАДИОН', 'ТЕАТР', 'ТЮРЬМА',
-        'УНИВЕРСИТЕТ', 'ЦИРК', 'ШКОЛА', 'ВРЕМЯ', 'ДЕНЬГИ', 'ЗВУК', 'ЗОЛОТО', 'ИГРА', 'ИСТОРИЯ', 'МАГИЯ',
-        'МУЗЫКА', 'НАУКА', 'НОЧЬ', 'ПОБЕДА', 'ПРИЗ', 'СЕКРЕТ', 'СИЛА', 'СЛОВО', 'СОН', 'ТАЙНА', 'ТЕНЬ', 'УДАЧА', 'ШАНС'
+        // Животные, птицы, морские обитатели и насекомые
+        'АИСТ', 'АКУЛА', 'БАБОЧКА', 'БЕЛКА', 'БОБЁР', 'БУЙВОЛ', 'ВЕРБЛЮД', 'ВОЛК', 'ВОРОН', 'ВЫДРА',
+        'ГАЗЕЛЬ', 'ГЕПАРД', 'ГОЛУБЬ', 'ГОРИЛЛА', 'ДЕЛЬФИН', 'ДИНОЗАВР', 'ДРАКОН', 'ДЯТЕЛ', 'ЁЖ', 'ЕНОТ',
+        'ЖАБА', 'ЖИРАФ', 'ЖУК', 'ЗАЯЦ', 'ЗЕБРА', 'ЗМЕЯ', 'ИГУАНА', 'КАБАН', 'КАЛЬМАР', 'КЕНГУРУ',
+        'КИТ', 'КОБРА', 'КОЗА', 'КОЛИБРИ', 'КОНЬ', 'КОРШУН', 'КОШКА', 'КРАБ', 'КРОКОДИЛ', 'КРОТ',
+        'КУНИЦА', 'ЛАМА', 'ЛАСТОЧКА', 'ЛЕБЕДЬ', 'ЛЕВ', 'ЛЕНИВЕЦ', 'ЛЕОПАРД', 'ЛИСА', 'ЛОСЬ', 'МЕДВЕДЬ',
+        'МОРЖ', 'МУРАВЕЙ', 'НОСОРОГ', 'ОЛЕНЬ', 'ОРЁЛ', 'ОСМИНОГ', 'ПАНДА', 'ПАНТЕРА', 'ПАУК', 'ПЕЛИКАН',
+        'ПИНГВИН', 'ПОПУГАЙ', 'ПУМА', 'ПЧЕЛА', 'РЫСЬ', 'САЛАМАНДРА', 'СКАТ', 'СКОРПИОН', 'СЛОН', 'СОВА',
+        'СОБАКА', 'СОКОЛ', 'СТРЕКОЗА', 'СТРАУС', 'СУРИКАТ', 'ТАРАНТУЛ', 'ТИГР', 'ТЮЛЕНЬ', 'УЛИТКА', 'ФАЗАН',
+        'ФЕНИКС', 'ФЛАМИНГО', 'ХАМЕЛЕОН', 'ХОМЯК', 'ЦАПЛЯ', 'ЦИКАДА', 'ЧАЙКА', 'ЧЕПАРАХА', 'ЧЕРВЬ', 'ШАКАЛ',
+
+        // Природа, погода, космос и стихии
+        'АЙСБЕРГ', 'АСТЕРОИД', 'БЕРЕГ', 'БОЛОТО', 'ВОДОПАД', 'ВОЛНА', 'ВУЛКАН', 'ГАЛАКТИКА', 'ГЕЙЗЕР', 'ГОРА',
+        'ГРАД', 'ГРОЗА', 'ДЮНА', 'ДОЖДЬ', 'ЗАКАТ', 'ЗАТМЕНИЕ', 'ЗВЕЗДА', 'ЗЕМЛЯ', 'КАМЕНЬ', 'КАНЬОН',
+        'КОМЕТА', 'КОСМОС', 'КРАТЕР', 'КРИСТАЛЛ', 'ЛАВИНА', 'ЛАВА', 'ЛЕДНИК', 'ЛЕС', 'ЛУНА', 'МЕТЕОР',
+        'МОЛНИЯ', 'МОРЕ', 'ОАЗИС', 'ОБЛАКО', 'ОГОНЬ', 'ОЗЕРО', 'ОКЕАН', 'ОРБИТА', 'ОСТРОВ', 'ПЕЩЕРА',
+        'ПЛАНЕТА', 'ПЛЯЖ', 'ПОЛЮС', 'ПУСТЫНЯ', 'РАДУГА', 'РАССВЕТ', 'РЕКА', 'РИФ', 'РОСА', 'САВАННА',
+        'СКАЛА', 'СНЕГ', 'СОЛНЦЕ', 'СТЕПЬ', 'СУМЕРКИ', 'ТАЙГА', 'ТОРНАДО', 'ТУМАН', 'УРАГАН', 'УТЕС',
+        'ФЬОРД', 'ЦУНАМИ', 'ЭКВАТОР', 'ЭХО',
+
+        // Еда, напитки, фрукты и кухня
+        'АНАНАС', 'АРБУЗ', 'БАЗИЛИК', 'БАНАН', 'БЕКОН', 'БЛИН', 'БУРГЕР', 'ВАНИЛЬ', 'ВАФЛЯ', 'ВИНОГРАД',
+        'ВИШНЯ', 'ГРАНАТ', 'ГРИБ', 'ГРУША', 'ДЫНЯ', 'ЗЕФИР', 'ИЗЮМ', 'ИКРА', 'ИМБИРЬ', 'ЙОГУРТ',
+        'КАКАО', 'КАРАМЕЛЬ', 'КАРРИ', 'КЕКС', 'КЛУБНИКА', 'КОКОС', 'КОРИЦА', 'КОФЕ', 'КРУАССАН', 'ЛАЙМ',
+        'ЛИМОН', 'ЛУК', 'МАЛИНА', 'МАНГО', 'МАСЛО', 'МЁД', 'МИНДАЛЬ', 'МОЛОКО', 'МОРОЖЕНОЕ', 'МЯТА',
+        'ОЛИВКА', 'ОМЛЕТ', 'ОРЕХ', 'ПЕЛЬМЕНИ', 'ПЕРЕЦ', 'ПЕРСИК', 'ПИРОГ', 'ПИЦЦА', 'ПРЯНИК', 'РЕДИС',
+        'РИС', 'САЛАТ', 'САХАР', 'СЛИВА', 'СОЛЬ', 'СОУС', 'СТЕЙК', 'СУП', 'СУШИ', 'СЫР',
+        'ТАКО', 'ТОРТ', 'ТЫКВА', 'УКРОП', 'ФАСОЛЬ', 'ФИНИК', 'ХЛЕБ', 'ЧАЙ', 'ЧЕСНОК', 'ЧИЛИ',
+        'ШОКОЛАД', 'ЩАВЕЛЬ', 'ЭСПРЕССО', 'ЯБЛОКО', 'ЯГОДА', 'ЯЙЦО',
+
+        // Профессии, роли и люди
+        'АДВОКАТ', 'АКТЁР', 'АРХЕОЛОГ', 'АРХИТЕКТОР', 'АСТРОНАВТ', 'БАЛЕТМЕЙСТЕР', 'БАНКИР', 'БАРИСТА', 'БОКСЁР', 'ВРАЧ',
+        'ГЕОЛОГ', 'ГЛАДИАТОР', 'ДЕТЕКТИВ', 'ДИДЖЕЙ', 'ДИЗАЙНЕР', 'ДИРИЖЁР', 'ДОКТОР', 'ЖУРНАЛИСТ', 'ИНЖЕНЕР',
+        'ИСТОРИК', 'КАПИТАН', 'КАСКАДЁР', 'КЛОУН', 'КОМПОЗИТОР', 'КОРОЛЬ', 'КОСМОНАВТ', 'КУЗНЕЦ', 'ЛЁТЧИК', 'МАГ',
+        'МЕХАНИК', 'МОРЯК', 'МУЗЫКАНТ', 'НИНДЗЯ', 'ОХОТНИК', 'ПЕКАРЬ', 'ПИРАТ', 'ПИСАТЕЛЬ', 'ПОВАР', 'ПОЛИЦЕЙСКИЙ',
+        'ПОЖАРНЫЙ', 'ПРИЗРАК', 'ПРОГРАММИСТ', 'ПРОФЕССОР', 'РАЗВЕДЧИК', 'РЕЖИССЁР', 'РЕПОРТЁР', 'РЫЦАРЬ', 'САМУРАЙ', 'СКУЛЬПТОР',
+        'СНАЙПЕР', 'СУДЬЯ', 'ТРЕНЕР', 'УЧЁНЫЙ', 'ФАРАОН', 'ФИЛОСОФ', 'ФОКУСНИК', 'ФОТОГРАФ', 'ХИМИК', 'ХИРУРГ',
+        'ХУДОЖНИК', 'ШАХТЁР', 'ШПИОН', 'ЭКСПЕДИЦИЯ', 'ЮРИСТ',
+
+        // Технологии, наука, механизмы и предметы
+        'АЛГОРИТМ', 'АНТЕННА', 'АРХИВ', 'БАТАРЕЯ', 'БИНОКЛЬ', 'БЛОК', 'БОМБА', 'БУДИЛЬНИК', 'ВЕКТОР', 'ВЕЛИК',
+        'ВЕНТИЛЯТОР', 'ВИНТ', 'ВИРУС', 'ГЛОБУС', 'ГРАФИК', 'ДВИГАТЕЛЬ', 'ДИНАМИТ', 'ДИСК', 'ДРОН', 'ЗАМОК',
+        'ЗЕРКАЛО', 'ЗОЛОТО', 'ЗОНТ', 'ИГЛА', 'ИНДЕКС', 'КАБЕЛЬ', 'КАМЕРА', 'КАРТА', 'КЛАВИША', 'КЛЕЙ',
+        'КЛЮЧ', 'КОД', 'КОЛЕСО', 'КОЛОКОЛ', 'КОМПАС', 'КОМПЬЮТЕР', 'КОРАБЛЬ', 'КОРОНА', 'КРАН', 'КРЕСТ',
+        'ЛАЗЕР', 'ЛАМПА', 'ЛЕСТНИЦА', 'ЛИНЗА', 'МАГНИТ', 'МАСКА', 'МАТРИЦА', 'МЕЧ', 'МИКРОСКОП', 'МОДЕМ',
+        'МОНЕТА', 'МОСТ', 'МОТОР', 'НАУШНИКИ', 'НОЖ', 'ОБЪЕКТИВ', 'ОРУЖИЕ', 'ОТВЁРТКА', 'ПАЛЕЦ', 'ПАРОЛЬ',
+        'ПАРУС', 'ПЕЧАТЬ', 'ПИЛА', 'ПОЕЗД', 'ПОРТАЛ', 'ПОРШЕНЬ', 'ПРИБОР', 'ПРИЗМА', 'ПРОЦЕССОР', 'ПРУЖИНА',
+        'ПУЛЬТ', 'РАДАР', 'РАКЕТА', 'РЕАКТОР', 'РОБОТ', 'РУЛЕТКА', 'САМОЛЁТ', 'СВЕТ', 'СЕЙФ', 'СЕНСОР',
+        'СЕРВЕР', 'СЕТЬ', 'СИГНАЛ', 'СИРЕНА', 'СКАНЕР', 'СПУТНИК', 'СТАНЦИЯ', 'СТЕКЛО', 'СТРЕЛА', 'СУНДУК',
+        'ТАНК', 'ТЕЛЕСКОП', 'ТЕЛЕФОН', 'ТЕРМОС', 'ТОПОР', 'ТОРМОЗ', 'ТРОС', 'ТУРБИНА', 'УЗЕЛ', 'ФАКЕЛ',
+        'ФИЛЬТР', 'ФОНАРЬ', 'ФОРМУЛА', 'ЧИП', 'ШАХМАТЫ', 'ШЕСТЕРНЯ', 'ШИФР', 'ШЛЕМ', 'ШНУР', 'ЩИТ',
+        'ЭКРАН', 'ЭЛЕКТРОН', 'ЭНЕРГИЯ', 'ЯКОРЬ',
+
+        // География, города, страны и локации
+        'АЛПЫ', 'АМАЗОНКА', 'АНТАРКТИДА', 'АФИНЫ', 'БАГДАД', 'БАРСЕЛОНА', 'БЕРЛИН', 'БРАЗИЛИЯ', 'ВАТИКАН', 'ВЕНЕЦИЯ',
+        'ВЕНА', 'ГАВАЙИ', 'ГОЛЛИВУД', 'ГРЕЦИЯ', 'ДУБАЙ', 'ЕГИПЕТ', 'ИНДИЯ', 'ИСЛАНДИЯ', 'ИТАЛИЯ', 'КАИР',
+        'КАНАДА', 'КИОТО', 'КРЕМЛЬ', 'КУБА', 'ЛАПЛАНДИЯ', 'ЛИССАБОН', 'ЛОНДОН', 'МАДРИД', 'МАРС', 'МЕКСИКА',
+        'МОСКВА', 'НЕВА', 'НИЛ', 'НЬЮ-ЙОРК', 'ОЛИМП', 'ОСЛО', 'ПАРИЖ', 'ПЕКИН', 'ПИРАМИДА', 'ПОРТУГАЛИЯ',
+        'ПРАГА', 'РИМ', 'САХАРА', 'СЕВЕР', 'СЕУЛ', 'СИБИРЬ', 'СИДНЕЙ', 'СТАМБУЛ', 'ТАЙВАНЬ', 'ТЕХАС',
+        'ТИБЕТ', 'ТОКИО', 'ТОРОНТО', 'УРАЛ', 'ФРАНЦИЯ', 'ЦЮРИХ', 'ЧИКАГО', 'ШВЕЙЦАРИЯ', 'ЭВЕРЕСТ', 'ЭЛЬБРУС',
+        'ЮГ', 'ЯПОНИЯ',
+
+        // Здания, спорт, искусство, музыка и культура
+        'АМФИТЕАТР', 'АРЕНА', 'АТЕЛЬЕ', 'БАЗА', 'БАЛКОН', 'БАНК', 'БАР', 'БАШНЯ', 'БИБЛИОТЕКА', 'БОЛЬНИЦА',
+        'БУНКЕР', 'ВОКЗАЛ', 'ГАЛЕРЕЯ', 'ГАРАЖ', 'ДВОРЕЦ', 'ДОК', 'ЗАВОД', 'ЗАЛ', 'ЗАПОВЕДНИК', 'КАЗИНО',
+        'КАФЕ', 'КИНО', 'КОЛЛЕДЖ', 'КОЛИЗЕЙ', 'КОНЦЕРТ', 'КРЕПОСТЬ', 'ЛАБОРАТОРИЯ', 'МАГАЗИН', 'МАЯК', 'МЕТРО',
+        'МОНАСТЫРЬ', 'МУЗЕЙ', 'ОБСЕРВАТОРИЯ', 'ОПЕРА', 'ОТЕЛЬ', 'ПАРК', 'ПОРТ', 'ПРИЮТ', 'РАНЧО', 'РЕСТОРАН',
+        'РИНГ', 'САЛОН', 'СКЛАД', 'СОБОР', 'СТАДИОН', 'СТУДИЯ', 'ТЕАТР', 'ТЕРМИНАЛ', 'ТЮРЬМА', 'УНИВЕРСИТЕТ',
+        'ФЕРМА', 'ФОНТАН', 'ХРАМ', 'ЦИРК', 'ШКОЛА', 'ЭТАЖ',
+        'АККОРД', 'АРФА', 'БАРАБАН', 'БАС', 'ВИОЛОНЧЕЛЬ', 'ГИТАРА', 'ДЖАЗ', 'КАРТИНА', 'КЛИП', 'МЕЛОДИЯ',
+        'НОТА', 'ОРГАН', 'ПИАНИНО', 'ПОЭЗИЯ', 'РИТМ', 'РОК', 'РОМАН', 'СКРИПКА', 'СЦЕНА', 'ТАНЕЦ',
+        'ТРУБА', 'ФИЛЬМ', 'ФЛЕЙТА', 'ХОЛСТ', 'ЭПОХА',
+        'АРБИТР', 'АТЛЕТ', 'БАСКЕТБОЛ', 'БИАТЛОН', 'БОУЛИНГ', 'ВОРОТА', 'ГОЛ', 'ГОЛЬФ', 'КАНОЭ', 'КАРАТЭ',
+        'КЁРЛИНГ', 'МАРАФОН', 'МЕДАЛЬ', 'МЯЧ', 'ОЛИМПИАДА', 'ПАС', 'ПЕНАЛЬТИ', 'ПЛАВАНИЕ', 'РЕКОРД', 'СЕКТОР',
+        'СЕТКА', 'СНОУБОРД', 'СТАРТ', 'ТЕННИС', 'ТРАССА', 'ФЕХТОВАНИЕ', 'ФИНИШ', 'ФОЛ', 'ФУТБОЛ', 'ХОККЕЙ',
+        'ШАЙБА', 'ШТАНГА',
+
+        // Абстрактные понятия, время, игры и мифология
+        'АЗАРТ', 'АНОМАЛИЯ', 'БАЛАНС', 'БУДУЩЕЕ', 'ВЕРА', 'ВЗРЫВ', 'ВИДЕНИЕ', 'ВЛАСТЬ', 'ВОЙНА',
+        'ВОЛШЕБСТВО', 'ВРЕМЯ', 'ВЫБОР', 'ГЕНИЙ', 'ГИПОТЕЗА', 'ГОЛОС', 'ГОРИЗОНТ', 'ГРАНИЦА', 'ДЕНЬГИ', 'ДОБРО',
+        'ДОГОВОР', 'ДУХ', 'ЗАВТРА', 'ЗАГАДКА', 'ЗАКОН', 'ЗВУК', 'ЗНАК', 'ЗНАНИЕ', 'ИГРА', 'ИДЕЯ',
+        'ИЛЛЮЗИЯ', 'ИМПУЛЬС', 'ИСКУССТВО', 'ИСТОРИЯ', 'КАРМА', 'КВЕСТ', 'КЛЯТВА', 'КОНТРАКТ', 'КОШМАР', 'КРИЗИС',
+        'КУЛЬТ', 'ЛЕГЕНДА', 'ЛИМИТ', 'ЛОГИКА', 'МАГИЯ', 'МЕЧТА', 'МИРАЖ', 'МИССИЯ', 'МИФ', 'МОМЕНТ',
+        'МУДРОСТЬ', 'МЫСЛЬ', 'НАДЕЖДА', 'НАСЛЕДИЕ', 'НАУКА', 'НОЧЬ', 'ОБМАН', 'ОБРАЗ', 'ОДИНОЧЕСТВО', 'ОПЫТ',
+        'ОРАКУЛ', 'ОШИБКА', 'ПАМЯТЬ', 'ПАРАДОКС', 'ПАРУСНИК', 'ПЕРЕМИРИЕ', 'ПЛАН', 'ПОБЕДА', 'ПОДВОХ', 'ПОДСКАЗКА',
+        'ПОИСК', 'ПОЛНОЧЬ', 'ПОРОГ', 'ПОСТУПОК', 'ПРАВИЛО', 'ПРИЗ', 'ПРИЗРАЧНОСТЬ', 'ПРОГНОЗ', 'ПРОШЛОЕ', 'ПУТЬ',
+        'РАВНОВЕСИЕ', 'РАЗУМ', 'РЕЗЕРВ', 'РИСК', 'РИТУАЛ', 'РОЛЬ', 'СВОБОДА', 'СЕКРЕТ', 'СИГНАТУРА', 'СИЛА',
+        'СИМВОЛ', 'СИСТЕМА', 'СЛОВО', 'СЛУЧАЙ', 'СМЕНА', 'СМЫСЛ', 'СНАРЯД', 'СОН', 'СОЮЗ', 'СПОР',
+        'СРОК', 'СТАТУС', 'СТРАТЕГИЯ', 'СТРАХ', 'СУДЬБА', 'ТАЙНА', 'ТАЛАНТ', 'ТЕМП', 'ТЕНЬ', 'ТЕОРИЯ',
+        'ТЕРРИТОРИЯ', 'ТИШИНА', 'ТРЕВОГА', 'ТРИУМФ', 'УГРОЗА', 'УДАЧА', 'УЗОР', 'УРОК', 'УСПЕХ', 'ФАКТ',
+        'ФАТАЛИЗМ', 'ФИНАЛ', 'ФРАГМЕНТ', 'ХАОС', 'ХАРАКТЕР', 'ХИТРОСТЬ', 'ЦЕЛЬ', 'ЦИКЛ', 'ШАНС', 'ШОК',
+        'ШТОРМ', 'ЭКСПЕРИМЕНТ', 'ЭЛИКСИР', 'ЭМОЦИЯ', 'ЭНЕРГЕТИКА', 'ЭРА', 'ЭФФЕКТ', 'ЮМОР'
     ];
 
-    // =========================================================================
-    // 3. СОСТОЯНИЕ ПРИЛОЖЕНИЯ
-    // =========================================================================
     let currentUser = null;
     let currentProfile = null;
     let pendingRegAvatarDataUrl = '';
@@ -1565,19 +1647,18 @@
         redCardsRemaining: 8,
         currentTeam: 'blue',
         currentHint: null,
+        hintGivenOnTurn: false,
+        teamsLocked: false,
         gameOver: false,
         winner: null,
-        timeLeft: 0,
-        timerRunning: false,
+        timeLeft: TURN_SECONDS,
+        timerRunning: true,
         hintsHistory: [],
         gameNumber: 1,
         cardsBlocked: true,
         eloSettled: false
     };
 
-    // =========================================================================
-    // 4. ПРОФИЛЬ И АВТОРИЗАЦИЯ (БЕЗ upsert КОНФЛИКТОВ)
-    // =========================================================================
     async function ensureUserProfile(user) {
         if (!user) return null;
 
@@ -1606,7 +1687,6 @@
                 .maybeSingle();
 
             if (insertErr) {
-                console.warn('Профиль не сохранился в БД, используем локальный:', insertErr.message);
                 currentProfile = {
                     id: user.id,
                     username: fallbackUsername,
@@ -1746,9 +1826,6 @@
         });
     }
 
-    // =========================================================================
-    // 5. УПРАВЛЕНИЕ КОМНАТАМИ И REALTIME
-    // =========================================================================
     function generateRoomCode() {
         const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
         let code = '';
@@ -1756,7 +1833,7 @@
         return code;
     }
 
-    function buildInitialGameState(gameNumber = 1) {
+    function buildInitialGameState(gameNumber = 1, teamsLocked = false) {
         const shuffledWords = [...wordList].sort(() => Math.random() - 0.5).slice(0, 25);
         const blueStarts = gameNumber % 2 === 1;
         const cardTypes = [];
@@ -1781,10 +1858,12 @@
             redCardsRemaining: blueStarts ? 8 : 9,
             currentTeam: blueStarts ? 'blue' : 'red',
             currentHint: null,
+            hintGivenOnTurn: false,
+            teamsLocked: Boolean(teamsLocked),
             gameOver: false,
             winner: null,
-            timeLeft: 0,
-            timerRunning: false,
+            timeLeft: TURN_SECONDS,
+            timerRunning: true,
             hintsHistory: [],
             gameNumber,
             cardsBlocked: true,
@@ -1814,7 +1893,7 @@
         await ensureUserProfile(user);
 
         const code = generateRoomCode();
-        const initialState = buildInitialGameState(1);
+        const initialState = buildInitialGameState(1, false);
 
         const { error } = await sb
             .from('rooms')
@@ -1856,7 +1935,6 @@
             return;
         }
 
-        // Проверяем, есть ли уже запись игрока в комнате, чтобы избежать ошибок upsert
         const { data: existingPlayer } = await sb
             .from('room_players')
             .select('id')
@@ -1879,7 +1957,12 @@
         }
 
         currentRoom = room;
-        gameState = { ...gameState, ...room.game_state };
+        gameState = {
+            ...gameState,
+            ...room.game_state,
+            hintGivenOnTurn: Boolean(room.game_state?.hintGivenOnTurn ?? room.game_state?.currentHint),
+            teamsLocked: Boolean(room.game_state?.teamsLocked)
+        };
 
         await fetchRoomPlayers();
         await fetchRoomMessages();
@@ -1913,9 +1996,15 @@
         document.getElementById('header-room-code').textContent = currentRoom.code;
         document.getElementById('admin-panel').style.display = isCreator ? 'block' : 'none';
 
-        document.getElementById('game-paused-overlay').classList.toggle('active', currentRoom.status === 'paused');
-
+        updatePauseOverlayUI();
         syncAllUI();
+    }
+
+    function updatePauseOverlayUI() {
+        const isPaused = currentRoom?.status === 'paused';
+        const isCreator = currentRoom?.creator_id === currentUser?.id;
+        document.getElementById('game-paused-overlay').classList.toggle('active', isPaused);
+        document.getElementById('resume-pause-btn').style.display = (isPaused && isCreator) ? 'inline-block' : 'none';
     }
 
     async function fetchRoomPlayers() {
@@ -1978,12 +2067,17 @@
                 const updatedRoom = payload.new;
                 const prevStatus = currentRoom?.status;
                 currentRoom = updatedRoom;
-                gameState = { ...gameState, ...updatedRoom.game_state };
+                gameState = {
+                    ...gameState,
+                    ...updatedRoom.game_state,
+                    hintGivenOnTurn: Boolean(updatedRoom.game_state?.hintGivenOnTurn ?? updatedRoom.game_state?.currentHint),
+                    teamsLocked: Boolean(updatedRoom.game_state?.teamsLocked)
+                };
 
                 if (prevStatus === 'lobby' && updatedRoom.status === 'playing') {
                     enterGameScreen();
                 } else if (updatedRoom.status !== 'lobby') {
-                    document.getElementById('game-paused-overlay').classList.toggle('active', updatedRoom.status === 'paused');
+                    updatePauseOverlayUI();
                     syncAllUI();
                 }
 
@@ -2059,9 +2153,6 @@
         return String(str).replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
     }
 
-    // =========================================================================
-    // 6. ЛОББИ И КОМАНДЫ
-    // =========================================================================
     function getMyPlayerRecord() {
         return roomPlayers.find(p => p.user_id === currentUser?.id) || null;
     }
@@ -2100,9 +2191,15 @@
 
     async function startGameFromLobby() {
         if (currentRoom?.creator_id !== currentUser?.id) return;
+        gameState.timeLeft = TURN_SECONDS;
+        gameState.timerRunning = true;
+        gameState.cardsBlocked = true;
+        gameState.hintGivenOnTurn = false;
+        gameState.currentHint = null;
+
         await sb
             .from('rooms')
-            .update({ status: 'playing' })
+            .update({ status: 'playing', game_state: gameState })
             .eq('code', currentRoom.code);
 
         await sendRoomMessage(`🚀 Игра #${gameState.gameNumber} началась! Выберите команду и шпион-мастера.`, 'game-start');
@@ -2120,6 +2217,7 @@
         roomPlayers = [];
         document.getElementById('game-container').style.display = 'none';
         document.getElementById('winner-celebration').classList.remove('active');
+        document.getElementById('game-paused-overlay').classList.remove('active');
         document.getElementById('lobby-modal').style.display = 'flex';
         document.getElementById('game-lobby').style.display = 'none';
         document.getElementById('lobby-choice-cards').style.display = 'flex';
@@ -2127,6 +2225,11 @@
 
     async function joinTeam(team) {
         if (!currentRoom) return;
+        if (gameState.teamsLocked) {
+            alert('Команды закрыты создателем комнаты!');
+            return;
+        }
+
         await sb
             .from('room_players')
             .update({ team, role: 'agent' })
@@ -2138,6 +2241,11 @@
 
     async function leaveTeam() {
         if (!currentRoom) return;
+        if (gameState.teamsLocked) {
+            alert('Команды закрыты создателем комнаты!');
+            return;
+        }
+
         await sb
             .from('room_players')
             .update({ team: null, role: 'agent' })
@@ -2150,6 +2258,10 @@
     async function becomeMaster() {
         const me = getMyPlayerRecord();
         if (!me || !me.team) return;
+        if (gameState.teamsLocked) {
+            alert('Переход ролей и команд заблокирован создателем комнаты!');
+            return;
+        }
 
         await sb
             .from('room_players')
@@ -2197,6 +2309,24 @@
         const masterBtns = document.getElementById('master-buttons');
         const leaveBtn = document.getElementById('leave-team-btn');
         const hintControls = document.getElementById('hint-controls');
+        const lockBanner = document.getElementById('teams-lock-banner');
+        const joinBlueBtn = document.getElementById('join-blue-btn');
+        const joinRedBtn = document.getElementById('join-red-btn');
+        const becomeMasterBtn = document.getElementById('become-master-btn');
+
+        const locked = Boolean(gameState.teamsLocked);
+        lockBanner.style.display = locked ? 'block' : 'none';
+        joinBlueBtn.disabled = locked;
+        joinRedBtn.disabled = locked;
+        leaveBtn.disabled = locked;
+        becomeMasterBtn.disabled = locked;
+
+        const lockIcon = document.getElementById('lock-teams-icon');
+        const lockText = document.getElementById('lock-teams-text');
+        if (lockIcon && lockText) {
+            lockIcon.className = locked ? 'fas fa-unlock' : 'fas fa-lock';
+            lockText.textContent = locked ? 'Открыть команды' : 'Закрыть команды';
+        }
 
         if (!me || !me.team) {
             info.innerHTML = `
@@ -2219,11 +2349,33 @@
         leaveBtn.style.display = 'block';
         masterBtns.style.display = me.role !== 'master' ? 'flex' : 'none';
         hintControls.style.display = me.role === 'master' ? 'block' : 'none';
+
+        const canGiveHintNow =
+            me.role === 'master' &&
+            me.team === gameState.currentTeam &&
+            !gameState.gameOver &&
+            currentRoom?.status === 'playing' &&
+            !gameState.hintGivenOnTurn &&
+            !gameState.currentHint;
+
+        const hintWordInp = document.getElementById('hint-word');
+        const hintNumInp = document.getElementById('hint-number');
+        const giveHintBtn = document.getElementById('give-hint-btn');
+        const hintNote = document.getElementById('hint-status-note');
+
+        hintWordInp.disabled = !canGiveHintNow;
+        hintNumInp.disabled = !canGiveHintNow;
+        giveHintBtn.disabled = !canGiveHintNow;
+
+        if (gameState.hintGivenOnTurn || gameState.currentHint) {
+            hintNote.textContent = 'Подсказка на этот ход уже отправлена. Ожидайте завершения хода.';
+        } else if (me.team !== gameState.currentTeam) {
+            hintNote.textContent = 'Сейчас ход другой команды.';
+        } else {
+            hintNote.textContent = 'На этот ход доступна ровно 1 подсказка.';
+        }
     }
 
-    // =========================================================================
-    // 7. ИГРОВАЯ ЛОГИКА, ХОДЫ, ПОДСКАЗКИ И ELO
-    // =========================================================================
     function syncAllUI() {
         updateGameBoard();
         updateScoreUI();
@@ -2290,12 +2442,15 @@
             ind.className = 'status-message';
             return;
         }
-        const waitHint = gameState.cardsBlocked ? ' (ожидание подсказки мастера)' : ' (агенты выбирают слова)';
+        const phaseText = gameState.cardsBlocked
+            ? ' (ход шпион-мастера — ждём 1 подсказку)'
+            : ' (ход агентов — выбор слов)';
+
         if (gameState.currentTeam === 'blue') {
-            ind.textContent = 'Ход синей команды' + waitHint;
+            ind.textContent = 'Ход синей команды' + phaseText;
             ind.className = 'status-message blue';
         } else {
-            ind.textContent = 'Ход красной команды' + waitHint;
+            ind.textContent = 'Ход красной команды' + phaseText;
             ind.className = 'status-message red';
         }
     }
@@ -2326,6 +2481,11 @@
             return;
         }
 
+        if (gameState.hintGivenOnTurn || gameState.currentHint) {
+            alert('На этот ход подсказка уже дана! Дождитесь следующего хода.');
+            return;
+        }
+
         const word = document.getElementById('hint-word').value.trim().toUpperCase();
         const num = parseInt(document.getElementById('hint-number').value, 10);
 
@@ -2335,8 +2495,9 @@
         }
 
         gameState.currentHint = { word, number: num, team: me.team };
+        gameState.hintGivenOnTurn = true;
         gameState.cardsBlocked = false;
-        gameState.timeLeft = 90;
+        gameState.timeLeft = TURN_SECONDS;
         gameState.timerRunning = true;
         gameState.hintsHistory.push({
             word,
@@ -2348,6 +2509,7 @@
         document.getElementById('hint-word').value = '';
         document.getElementById('hint-number').value = '';
 
+        updateMyRoleControls();
         await pushGameState();
         await sendRoomMessage(`💡 Подсказка (${me.team === 'blue' ? 'Синие' : 'Красные'}): "${word}" — ${num}`, 'hint');
     }
@@ -2394,13 +2556,11 @@
         gameState.currentTeam = gameState.currentTeam === 'blue' ? 'red' : 'blue';
         gameState.cardsBlocked = true;
         gameState.currentHint = null;
-        gameState.timerRunning = false;
-        gameState.timeLeft = 0;
+        gameState.hintGivenOnTurn = false;
+        gameState.timerRunning = true;
+        gameState.timeLeft = TURN_SECONDS;
     }
 
-    // =========================================================================
-    // 8. ЗАВЕРШЕНИЕ МАТЧА, ЗАПИСЬ ИСТОРИИ И РАСЧЁТ ELO
-    // =========================================================================
     async function finishMatch(winningTeam) {
         gameState.gameOver = true;
         gameState.winner = winningTeam;
@@ -2431,10 +2591,7 @@
             .select()
             .single();
 
-        if (matchErr || !match) {
-            console.error('Ошибка записи матча:', matchErr);
-            return;
-        }
+        if (matchErr || !match) return;
 
         const bluePlayers = activePlayers.filter(p => p.team === 'blue');
         const redPlayers = activePlayers.filter(p => p.team === 'red');
@@ -2495,7 +2652,7 @@
 
     async function startNextRound() {
         const nextNum = (gameState.gameNumber || 1) + 1;
-        gameState = buildInitialGameState(nextNum);
+        gameState = buildInitialGameState(nextNum, gameState.teamsLocked);
 
         await sb
             .from('room_players')
@@ -2519,7 +2676,8 @@
         }
         const m = Math.floor(gameState.timeLeft / 60);
         const s = gameState.timeLeft % 60;
-        el.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        const prefix = gameState.cardsBlocked ? '👑 Мастер: ' : '🕵️ Агенты: ';
+        el.textContent = `${prefix}${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
         el.className = 'timer running' + (gameState.timeLeft <= 20 ? ' warning' : '');
     }
 
@@ -2529,17 +2687,30 @@
                 gameState.timeLeft--;
                 updateTimerUI();
                 if (gameState.timeLeft === 0 && currentRoom.creator_id === currentUser?.id) {
+                    const phaseMsg = gameState.cardsBlocked
+                        ? '⏰ Время мастера вышло! Ход переходит другой команде.'
+                        : '⏰ Время агентов вышло! Ход переходит другой команде.';
                     switchTurnState();
                     await pushGameState();
-                    await sendRoomMessage('⏰ Время вышло! Ход переходит другой команде.', 'system');
+                    await sendRoomMessage(phaseMsg, 'system');
                 }
             }
         }
     }, 1000);
 
-    // =========================================================================
-    // 9. ФУНКЦИИ СОЗДАТЕЛЯ КОМНАТЫ
-    // =========================================================================
+    async function adminToggleLockTeams() {
+        if (currentRoom?.creator_id !== currentUser?.id) return;
+        gameState.teamsLocked = !gameState.teamsLocked;
+        updateMyRoleControls();
+        await pushGameState();
+        await sendRoomMessage(
+            gameState.teamsLocked
+                ? '🔒 Создатель закрыл переход между командами'
+                : '🔓 Создатель открыл переход между командами',
+            'system'
+        );
+    }
+
     async function adminShuffleTeams() {
         if (currentRoom?.creator_id !== currentUser?.id) return;
         const shuffled = [...roomPlayers].sort(() => Math.random() - 0.5);
@@ -2562,13 +2733,9 @@
         await sendRoomMessage(newStatus === 'paused' ? '⏸️ Игра на паузе' : '▶️ Игра продолжена', 'system');
     }
 
-    // =========================================================================
-    // 10. ОБРАБОТЧИКИ СОБЫТИЙ DOM
-    // =========================================================================
     document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('reg-avatar-preview').src = makeDefaultAvatarDataUrl('A');
 
-        // Показать / скрыть пароль
         document.getElementById('toggle-pass-btn').onclick = () => {
             const passInp = document.getElementById('auth-password');
             const icon = document.querySelector('#toggle-pass-btn i');
@@ -2581,7 +2748,6 @@
             }
         };
 
-        // Проверка текущей сессии Supabase
         const { data: { session } } = await sb.auth.getSession();
         if (session?.user) {
             currentUser = session.user;
@@ -2590,14 +2756,12 @@
             document.getElementById('room-select-section').style.display = 'block';
         }
 
-        // Отслеживание изменений авторизации
         sb.auth.onAuthStateChange(async (_event, newSession) => {
             if (newSession?.user) {
                 currentUser = newSession.user;
             }
         });
 
-        // Переключение Вход / Регистрация
         document.getElementById('tab-login').onclick = () => {
             isRegisterMode = false;
             document.getElementById('tab-login').classList.add('active');
@@ -2616,14 +2780,12 @@
             document.getElementById('auth-error').textContent = '';
         };
 
-        // Превью буквы при вводе ника
         document.getElementById('auth-username').addEventListener('input', (e) => {
             if (!pendingRegAvatarDataUrl) {
                 document.getElementById('reg-avatar-preview').src = makeDefaultAvatarDataUrl(e.target.value || 'A');
             }
         });
 
-        // Загрузка своего аватара при регистрации
         document.getElementById('reg-avatar-file').addEventListener('change', async (e) => {
             const file = e.target.files?.[0];
             if (!file) return;
@@ -2635,7 +2797,6 @@
             }
         });
 
-        // Загрузка своего аватара в окне профиля
         document.getElementById('profile-avatar-file').addEventListener('change', async (e) => {
             const file = e.target.files?.[0];
             if (!file) return;
@@ -2652,7 +2813,6 @@
             await saveCustomAvatar('');
         };
 
-        // Отправка формы входа/регистрации
         document.getElementById('auth-form').onsubmit = async (e) => {
             e.preventDefault();
             const email = document.getElementById('auth-email').value.trim();
@@ -2711,7 +2871,6 @@
             }
         };
 
-        // Выход из аккаунта
         document.getElementById('logout-btn').onclick = async () => {
             await leaveRoomCompletely();
             await sb.auth.signOut();
@@ -2721,14 +2880,12 @@
             document.getElementById('auth-section').style.display = 'block';
         };
 
-        // Профиль и история матчей
         document.getElementById('open-profile-btn').onclick = openProfileModal;
         document.getElementById('header-profile-btn').onclick = openProfileModal;
         document.getElementById('close-profile-btn').onclick = () => {
             document.getElementById('profile-modal').style.display = 'none';
         };
 
-        // Лобби
         document.getElementById('create-game-btn').onclick = createRoom;
         document.getElementById('join-game-btn').onclick = () => {
             document.getElementById('code-input-section').classList.add('active');
@@ -2745,7 +2902,6 @@
         document.getElementById('leave-lobby-btn').onclick = leaveRoomCompletely;
         document.getElementById('exit-room-btn').onclick = leaveRoomCompletely;
 
-        // Игровые действия
         document.getElementById('join-blue-btn').onclick = () => joinTeam('blue');
         document.getElementById('join-red-btn').onclick = () => joinTeam('red');
         document.getElementById('leave-team-btn').onclick = leaveTeam;
@@ -2753,7 +2909,6 @@
         document.getElementById('give-hint-btn').onclick = giveHint;
         document.getElementById('next-game-btn').onclick = startNextRound;
 
-        // Чат
         document.getElementById('send-chat-btn').onclick = async () => {
             const inp = document.getElementById('chat-input');
             if (inp.value.trim()) {
@@ -2765,7 +2920,6 @@
             if (e.key === 'Enter') document.getElementById('send-chat-btn').click();
         });
 
-        // Правила и админка
         document.getElementById('rules-btn-header').onclick = () => document.getElementById('rules-modal').style.display = 'flex';
         document.getElementById('rules-btn-main').onclick = () => document.getElementById('rules-modal').style.display = 'flex';
         document.getElementById('close-rules-btn').onclick = () => document.getElementById('rules-modal').style.display = 'none';
@@ -2773,8 +2927,10 @@
         document.getElementById('admin-toggle-btn').onclick = () => {
             document.getElementById('admin-controls').classList.toggle('active');
         };
+        document.getElementById('lock-teams-btn').onclick = adminToggleLockTeams;
         document.getElementById('shuffle-teams-btn').onclick = adminShuffleTeams;
         document.getElementById('pause-game-btn').onclick = adminTogglePause;
+        document.getElementById('resume-pause-btn').onclick = adminTogglePause;
         document.getElementById('reset-game-btn').onclick = () => {
             if (confirm('Сгенерировать новое поле для текущего раунда?')) startNextRound();
         };
