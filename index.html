@@ -1461,7 +1461,6 @@
                         </button>
                     </div>
 
-                    <!-- Кнопка голосования большинства за пропуск хода -->
                     <button class="skip-turn-btn" id="skip-turn-btn">
                         <i class="fas fa-forward"></i> Завершить ход (<span id="skip-votes-count">0/0</span>)
                     </button>
@@ -1575,8 +1574,17 @@
 <script>
     const SUPABASE_URL = 'https://poudbyptdieyifbfdtet.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_pFDRFkpxo6PlZJM2Z5ZRxQ_BXIFkfnN';
+    const ACTIVE_ROOM_STORAGE_KEY = 'codenames_active_room';
 
-    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: {
+            storage: window.localStorage,
+            persistSession: true,
+            autoRefreshToken: true,
+            detectSessionInUrl: true
+        }
+    });
+
     const TURN_SECONDS = 90;
     const HOLD_DURATION_MS = 650;
 
@@ -1713,7 +1721,7 @@
     let currentRoom = null;
     let roomPlayers = [];
     let roomChannel = null;
-    let peerCardHolds = {}; // { [cardId]: [{ userId, username }] }
+    let peerCardHolds = {};
     let activeHoldTimer = null;
     let activeHoldRaf = null;
     let activeHoldCardId = null;
@@ -1740,60 +1748,105 @@
         eloSettled: false
     };
 
+    function showLoggedInLobbyUI() {
+        document.getElementById('auth-section').style.display = 'none';
+        document.getElementById('room-select-section').style.display = 'block';
+    }
+
+    function showAuthFormUI() {
+        document.getElementById('room-select-section').style.display = 'none';
+        document.getElementById('game-container').style.display = 'none';
+        document.getElementById('lobby-modal').style.display = 'flex';
+        document.getElementById('auth-section').style.display = 'block';
+    }
+
     async function ensureUserProfile(user) {
         if (!user) return null;
 
-        let { data } = await sb
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .maybeSingle();
-
-        if (!data) {
-            const fallbackUsername =
-                user.user_metadata?.username ||
-                (user.email ? user.email.split('@')[0] : 'Agent') + '_' + user.id.slice(0, 4);
-
-            const { data: inserted, error: insertErr } = await sb
+        try {
+            let { data, error } = await sb
                 .from('profiles')
-                .insert({
-                    id: user.id,
-                    username: fallbackUsername,
-                    avatar_url: pendingRegAvatarDataUrl || '',
-                    elo: 1000,
-                    wins: 0,
-                    games_played: 0
-                })
-                .select()
+                .select('*')
+                .eq('id', user.id)
                 .maybeSingle();
 
-            if (insertErr) {
+            if (error) {
+                if (!currentProfile) {
+                    const fallbackUsername =
+                        user.user_metadata?.username ||
+                        (user.email ? user.email.split('@')[0] : 'Agent') + '_' + user.id.slice(0, 4);
+                    currentProfile = {
+                        id: user.id,
+                        username: fallbackUsername,
+                        avatar_url: pendingRegAvatarDataUrl || '',
+                        elo: 1000,
+                        wins: 0,
+                        games_played: 0
+                    };
+                    updateProfileUI();
+                }
+                return currentProfile;
+            }
+
+            if (!data) {
+                const fallbackUsername =
+                    user.user_metadata?.username ||
+                    (user.email ? user.email.split('@')[0] : 'Agent') + '_' + user.id.slice(0, 4);
+
+                const { data: inserted, error: insertErr } = await sb
+                    .from('profiles')
+                    .insert({
+                        id: user.id,
+                        username: fallbackUsername,
+                        avatar_url: pendingRegAvatarDataUrl || '',
+                        elo: 1000,
+                        wins: 0,
+                        games_played: 0
+                    })
+                    .select()
+                    .maybeSingle();
+
+                if (insertErr) {
+                    currentProfile = {
+                        id: user.id,
+                        username: fallbackUsername,
+                        avatar_url: pendingRegAvatarDataUrl || '',
+                        elo: 1000,
+                        wins: 0,
+                        games_played: 0
+                    };
+                    updateProfileUI();
+                    return currentProfile;
+                }
+                data = inserted;
+            } else if (pendingRegAvatarDataUrl) {
+                const { data: updated } = await sb
+                    .from('profiles')
+                    .update({ avatar_url: pendingRegAvatarDataUrl })
+                    .eq('id', user.id)
+                    .select()
+                    .maybeSingle();
+                if (updated) data = updated;
+                pendingRegAvatarDataUrl = '';
+            }
+
+            currentProfile = data;
+            updateProfileUI();
+            return data;
+        } catch (_) {
+            if (!currentProfile) {
                 currentProfile = {
                     id: user.id,
-                    username: fallbackUsername,
-                    avatar_url: pendingRegAvatarDataUrl || '',
+                    username: user.email ? user.email.split('@')[0] : 'Agent',
+                    avatar_url: '',
                     elo: 1000,
                     wins: 0,
                     games_played: 0
                 };
                 updateProfileUI();
-                return currentProfile;
             }
-            data = inserted;
-        } else if (pendingRegAvatarDataUrl) {
-            const { data: updated } = await sb
-                .from('profiles')
-                .update({ avatar_url: pendingRegAvatarDataUrl })
-                .eq('id', user.id)
-                .select()
-                .maybeSingle();
-            if (updated) data = updated;
-            pendingRegAvatarDataUrl = '';
+            return currentProfile;
         }
-
-        currentProfile = data;
-        updateProfileUI();
-        return data;
     }
 
     function updateProfileUI() {
@@ -1815,11 +1868,12 @@
     }
 
     async function saveCustomAvatar(dataUrl) {
-        if (!currentUser) return;
+        const user = await getValidUser();
+        if (!user) return;
         const { data, error } = await sb
             .from('profiles')
             .update({ avatar_url: dataUrl })
-            .eq('id', currentUser.id)
+            .eq('id', user.id)
             .select()
             .single();
 
@@ -1833,10 +1887,11 @@
     }
 
     async function openProfileModal() {
-        if (!currentUser) return;
+        const user = await getValidUser();
+        if (!user) return;
         document.getElementById('profile-modal').style.display = 'flex';
 
-        await ensureUserProfile(currentUser);
+        await ensureUserProfile(user);
         if (currentProfile) {
             document.getElementById('stat-elo').textContent = currentProfile.elo;
             document.getElementById('stat-games').textContent = currentProfile.games_played;
@@ -1848,10 +1903,10 @@
             document.getElementById('profile-avatar-preview').src = resolveAvatar(currentProfile);
         }
 
-        await loadMatchHistory();
+        await loadMatchHistory(user.id);
     }
 
-    async function loadMatchHistory() {
+    async function loadMatchHistory(userId) {
         const list = document.getElementById('match-history-list');
         list.innerHTML = '<p style="color: #aaa; text-align: center; padding: 12px;">Загрузка истории...</p>';
 
@@ -1869,7 +1924,7 @@
                     played_at
                 )
             `)
-            .eq('user_id', currentUser.id)
+            .eq('user_id', userId)
             .order('id', { ascending: false })
             .limit(15);
 
@@ -1954,15 +2009,19 @@
     }
 
     async function getValidUser() {
-        let { data: { session } } = await sb.auth.getSession();
-        if (!session) {
+        try {
+            let { data: { session } } = await sb.auth.getSession();
+            if (session?.user) {
+                currentUser = session.user;
+                return currentUser;
+            }
             const refreshed = await sb.auth.refreshSession();
             session = refreshed.data?.session || null;
-        }
-        if (session?.user) {
-            currentUser = session.user;
-            return currentUser;
-        }
+            if (session?.user) {
+                currentUser = session.user;
+                return currentUser;
+            }
+        } catch (_) {}
         return currentUser;
     }
 
@@ -1991,15 +2050,12 @@
             return;
         }
 
-        await joinRoomByCode(code);
+        await joinRoomByCode(code, { silentNotFound: false });
     }
 
-    async function joinRoomByCode(rawCode) {
+    async function joinRoomByCode(rawCode, options = { silentNotFound: false }) {
         const user = await getValidUser();
-        if (!user) {
-            alert('Сессия не найдена. Войдите в аккаунт заново.');
-            return;
-        }
+        if (!user) return;
         await ensureUserProfile(user);
 
         const code = rawCode.trim().toUpperCase();
@@ -2013,6 +2069,10 @@
             .maybeSingle();
 
         if (error || !room) {
+            if (options.silentNotFound) {
+                sessionStorage.removeItem(ACTIVE_ROOM_STORAGE_KEY);
+                return;
+            }
             errEl.textContent = error ? error.message : 'Комната с таким кодом не найдена';
             return;
         }
@@ -2033,12 +2093,15 @@
                 });
 
             if (insertPlayerErr) {
-                errEl.textContent = 'Не удалось войти в комнату: ' + insertPlayerErr.message;
+                if (!options.silentNotFound) {
+                    errEl.textContent = 'Не удалось войти в комнату: ' + insertPlayerErr.message;
+                }
                 return;
             }
         }
 
         currentRoom = room;
+        sessionStorage.setItem(ACTIVE_ROOM_STORAGE_KEY, code);
         gameState = {
             ...gameState,
             ...room.game_state,
@@ -2051,7 +2114,6 @@
         await fetchRoomMessages();
         subscribeToRoom(code);
 
-        // Игра начинается ТОЛЬКО когда создатель нажмёт "Начать игру"
         if (room.status === 'lobby') {
             showLobbyRoomUI();
         } else {
@@ -2061,13 +2123,15 @@
 
     function showLobbyRoomUI() {
         document.getElementById('lobby-modal').style.display = 'flex';
+        document.getElementById('auth-section').style.display = 'none';
+        document.getElementById('room-select-section').style.display = 'block';
         document.getElementById('game-container').style.display = 'none';
         document.getElementById('lobby-choice-cards').style.display = 'none';
         document.getElementById('code-input-section').classList.remove('active');
         document.getElementById('game-lobby').style.display = 'block';
         document.getElementById('game-code-display').textContent = currentRoom.code;
 
-        const isCreator = currentRoom.creator_id === currentUser.id;
+        const isCreator = currentRoom.creator_id === currentUser?.id;
         document.getElementById('start-game-btn').style.display = isCreator ? 'block' : 'none';
         document.getElementById('lobby-wait-note').textContent = isCreator
             ? 'Вы создатель комнаты. Нажмите «Начать игру», когда все будут готовы.'
@@ -2081,7 +2145,7 @@
         document.getElementById('game-container').style.display = 'block';
         document.getElementById('subtitle-room-code').textContent = currentRoom.code;
 
-        const isCreator = currentRoom.creator_id === currentUser.id;
+        const isCreator = currentRoom.creator_id === currentUser?.id;
         document.getElementById('room-creator-badge').style.display = isCreator ? 'inline-block' : 'none';
         document.getElementById('header-room-code').textContent = currentRoom.code;
         document.getElementById('admin-panel').style.display = isCreator ? 'block' : 'none';
@@ -2216,7 +2280,6 @@
                 table: 'room_messages',
                 filter: `room_code=eq.${code}`
             }, (payload) => {
-                // Показываем в чате ТОЛЬКО сообщения людей (игроков и наблюдателей)
                 if (payload.new.msg_type !== 'chat') return;
                 const box = document.getElementById('chat-messages');
                 appendChatMessageDOM(payload.new);
@@ -2254,7 +2317,7 @@
     }
 
     async function sendChatMessage(text) {
-        if (!currentRoom || !text.trim()) return;
+        if (!currentRoom || !currentUser || !text.trim()) return;
         await sb.from('room_messages').insert({
             room_code: currentRoom.code,
             user_id: currentUser.id,
@@ -2341,9 +2404,10 @@
             .eq('code', currentRoom.code);
     }
 
-    async function leaveRoomCompletely() {
+    async function leaveRoomCompletely(removePlayerRow = true) {
         cancelCardHold();
-        if (currentRoom && currentUser) {
+        sessionStorage.removeItem(ACTIVE_ROOM_STORAGE_KEY);
+        if (removePlayerRow && currentRoom && currentUser) {
             await sb.from('room_players').delete().eq('room_code', currentRoom.code).eq('user_id', currentUser.id);
         }
         if (roomChannel) {
@@ -2362,13 +2426,12 @@
     }
 
     async function joinTeam(team) {
-        if (!currentRoom) return;
+        if (!currentRoom || !currentUser) return;
         if (gameState.teamsLocked) {
             alert('Команды закрыты создателем комнаты!');
             return;
         }
 
-        // Убираем голос игрока за скип при смене команды
         if (gameState.skipVotes?.includes(currentUser.id)) {
             gameState.skipVotes = gameState.skipVotes.filter(id => id !== currentUser.id);
             await pushGameState();
@@ -2382,7 +2445,7 @@
     }
 
     async function leaveTeam() {
-        if (!currentRoom) return;
+        if (!currentRoom || !currentUser) return;
         if (gameState.teamsLocked) {
             alert('Команды закрыты создателем комнаты!');
             return;
@@ -2402,7 +2465,7 @@
 
     async function becomeMaster() {
         const me = getMyPlayerRecord();
-        if (!me || !me.team) return;
+        if (!me || !me.team || !currentUser) return;
         if (gameState.teamsLocked) {
             alert('Переход ролей и команд заблокирован создателем комнаты!');
             return;
@@ -2460,7 +2523,7 @@
     function updateSkipTurnControls() {
         const skipBtn = document.getElementById('skip-turn-btn');
         const votesSpan = document.getElementById('skip-votes-count');
-        if (!skipBtn || !votesSpan) return;
+        if (!skipBtn || !votesSpan || !currentUser) return;
 
         const me = getMyPlayerRecord();
         const isGuessingPhase =
@@ -2492,7 +2555,7 @@
 
     async function toggleSkipTurnVote() {
         const me = getMyPlayerRecord();
-        if (!me || me.role !== 'agent' || me.team !== gameState.currentTeam || gameState.cardsBlocked || gameState.gameOver) {
+        if (!me || !currentUser || me.role !== 'agent' || me.team !== gameState.currentTeam || gameState.cardsBlocked || gameState.gameOver) {
             return;
         }
 
@@ -2689,7 +2752,6 @@
             if (!canClick) cardEl.classList.add('disabled');
             if (gameState.cardsBlocked && !card.revealed && !isMaster) cardEl.classList.add('blocked');
 
-            // Отображение игроков, которые сейчас зажимают это слово
             const holders = peerCardHolds[card.id] || [];
             if (!card.revealed && holders.length > 0) {
                 cardEl.classList.add('peer-holding');
@@ -3036,19 +3098,37 @@
             }
         };
 
-        const { data: { session } } = await sb.auth.getSession();
-        if (session?.user) {
-            currentUser = session.user;
-            await ensureUserProfile(currentUser);
-            document.getElementById('auth-section').style.display = 'none';
-            document.getElementById('room-select-section').style.display = 'block';
-        }
-
-        sb.auth.onAuthStateChange(async (_event, newSession) => {
+        sb.auth.onAuthStateChange(async (event, newSession) => {
+            if (event === 'SIGNED_OUT') {
+                currentUser = null;
+                currentProfile = null;
+                showAuthFormUI();
+                return;
+            }
             if (newSession?.user) {
                 currentUser = newSession.user;
+                showLoggedInLobbyUI();
+                await ensureUserProfile(currentUser);
             }
         });
+
+        try {
+            let { data: { session } } = await sb.auth.getSession();
+            if (!session) {
+                const refreshed = await sb.auth.refreshSession();
+                session = refreshed.data?.session || null;
+            }
+            if (session?.user) {
+                currentUser = session.user;
+                showLoggedInLobbyUI();
+                await ensureUserProfile(currentUser);
+
+                const savedRoomCode = sessionStorage.getItem(ACTIVE_ROOM_STORAGE_KEY);
+                if (savedRoomCode && savedRoomCode.length === 6) {
+                    await joinRoomByCode(savedRoomCode, { silentNotFound: true });
+                }
+            }
+        } catch (_) {}
 
         document.getElementById('tab-login').onclick = () => {
             isRegisterMode = false;
@@ -3134,9 +3214,8 @@
                         return;
                     }
                     currentUser = data.user;
+                    showLoggedInLobbyUI();
                     await ensureUserProfile(currentUser);
-                    document.getElementById('auth-section').style.display = 'none';
-                    document.getElementById('room-select-section').style.display = 'block';
                 }
             } else {
                 const { data, error } = await sb.auth.signInWithPassword({ email, password });
@@ -3147,19 +3226,17 @@
                     return;
                 }
                 currentUser = data.user;
+                showLoggedInLobbyUI();
                 await ensureUserProfile(currentUser);
-                document.getElementById('auth-section').style.display = 'none';
-                document.getElementById('room-select-section').style.display = 'block';
             }
         };
 
         document.getElementById('logout-btn').onclick = async () => {
-            await leaveRoomCompletely();
+            await leaveRoomCompletely(true);
             await sb.auth.signOut();
             currentUser = null;
             currentProfile = null;
-            document.getElementById('room-select-section').style.display = 'none';
-            document.getElementById('auth-section').style.display = 'block';
+            showAuthFormUI();
         };
 
         document.getElementById('open-profile-btn').onclick = openProfileModal;
@@ -3174,15 +3251,15 @@
         };
         document.getElementById('join-room-btn').onclick = () => {
             const code = document.getElementById('room-code-input').value;
-            if (code.trim().length === 6) joinRoomByCode(code);
+            if (code.trim().length === 6) joinRoomByCode(code, { silentNotFound: false });
         };
         document.getElementById('game-code-display').onclick = () => {
             navigator.clipboard?.writeText(currentRoom.code);
             alert('Код комнаты скопирован: ' + currentRoom.code);
         };
         document.getElementById('start-game-btn').onclick = startGameFromLobby;
-        document.getElementById('leave-lobby-btn').onclick = leaveRoomCompletely;
-        document.getElementById('exit-room-btn').onclick = leaveRoomCompletely;
+        document.getElementById('leave-lobby-btn').onclick = () => leaveRoomCompletely(true);
+        document.getElementById('exit-room-btn').onclick = () => leaveRoomCompletely(true);
 
         document.getElementById('join-blue-btn').onclick = () => joinTeam('blue');
         document.getElementById('join-red-btn').onclick = () => joinTeam('red');
