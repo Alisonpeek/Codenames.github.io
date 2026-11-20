@@ -1428,10 +1428,10 @@
 
 <script>
     // =========================================================================
-    // 1. НАСТРОЙКИ SUPABASE (ВСТАВЬ СВОИ ДАННЫЕ ИЗ PROJECT SETTINGS -> API)
+    // 1. НАСТРОЙКИ SUPABASE (ВСТАВЬ СВОЙ PUBLISHABLE KEY ИЗ PROJECT SETTINGS -> API)
     // =========================================================================
     const SUPABASE_URL = 'https://poudbyptdieyifbfdtet.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_pFDRFkpxo6PlZJM2Z5ZRxQ_BXIFkfnN';
+    const SUPABASE_ANON_KEY = 'YOUR_PUBLISHABLE_KEY';
 
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -1455,7 +1455,7 @@
         return makeDefaultAvatarDataUrl(profile?.username || 'A');
     }
 
-    // Сжатие загруженного пользователем фото до 160x160 JPEG Data URL (чтобы мгновенно сохранялось в БД без настройки Storage)
+    // Сжатие загруженного пользователем фото до 160x160 JPEG Data URL
     function compressImageFile(file, maxSize = 160) {
         return new Promise((resolve, reject) => {
             if (!file || !file.type.startsWith('image/')) {
@@ -1546,18 +1546,17 @@
     };
 
     // =========================================================================
-    // 4. ПРОФИЛЬ И АВТОРИЗАЦИЯ (С АВТО-СОЗДАНИЕМ ПРОФИЛЯ ЕСЛИ ЕГО НЕТ В БД)
+    // 4. ПРОФИЛЬ И АВТОРИЗАЦИЯ
     // =========================================================================
     async function ensureUserProfile(user) {
         if (!user) return null;
 
-        let { data, error } = await sb
+        let { data } = await sb
             .from('profiles')
             .select('*')
             .eq('id', user.id)
             .maybeSingle();
 
-        // Если профиль ещё не создан триггером (например, пользователь регистрировался до создания таблицы profiles) — создаём его прямо сейчас!
         if (!data) {
             const fallbackUsername =
                 user.user_metadata?.username ||
@@ -1575,7 +1574,6 @@
 
             if (insertErr) {
                 console.error('Не удалось создать профиль:', insertErr);
-                // Локальный запасной объект, чтобы интерфейс не падал
                 currentProfile = {
                     id: user.id,
                     username: fallbackUsername,
@@ -1589,7 +1587,6 @@
             }
             data = inserted;
         } else if (pendingRegAvatarDataUrl) {
-            // Если пользователь выбрал фото при регистрации — сохраняем его в профиль
             const { data: updated } = await sb
                 .from('profiles')
                 .update({ avatar_url: pendingRegAvatarDataUrl })
@@ -1643,7 +1640,6 @@
 
     async function openProfileModal() {
         if (!currentUser) return;
-        // Сразу открываем модалку, не дожидаясь сети
         document.getElementById('profile-modal').style.display = 'flex';
 
         await ensureUserProfile(currentUser);
@@ -1764,20 +1760,25 @@
     }
 
     async function createRoom() {
+        const { data: { user } } = await sb.auth.getUser();
+        if (!user) {
+            alert('Сессия истекла или не найдена. Пожалуйста, войдите в аккаунт заново.');
+            return;
+        }
+        currentUser = user;
         await ensureUserProfile(currentUser);
+
         const code = generateRoomCode();
         const initialState = buildInitialGameState(1);
 
-        const { data: room, error } = await sb
+        const { error } = await sb
             .from('rooms')
             .insert({
                 code,
                 creator_id: currentUser.id,
                 status: 'lobby',
                 game_state: initialState
-            })
-            .select()
-            .single();
+            });
 
         if (error) {
             alert('Ошибка создания комнаты: ' + error.message);
@@ -1788,7 +1789,14 @@
     }
 
     async function joinRoomByCode(rawCode) {
+        const { data: { user } } = await sb.auth.getUser();
+        if (!user) {
+            alert('Сессия не найдена. Войдите в аккаунт заново.');
+            return;
+        }
+        currentUser = user;
         await ensureUserProfile(currentUser);
+
         const code = rawCode.trim().toUpperCase();
         const errEl = document.getElementById('join-error');
         errEl.textContent = '';
@@ -2601,6 +2609,10 @@
                     return;
                 }
                 if (data.user) {
+                    if (!data.session) {
+                        errBox.textContent = 'Аккаунт создан! Отключите Confirm email в Supabase (Authentication → Providers → Email) или подтвердите почту.';
+                        return;
+                    }
                     currentUser = data.user;
                     await ensureUserProfile(currentUser);
                     document.getElementById('auth-section').style.display = 'none';
@@ -2609,7 +2621,7 @@
             } else {
                 const { data, error } = await sb.auth.signInWithPassword({ email, password });
                 if (error) {
-                    errBox.textContent = 'Неверный email или пароль';
+                    errBox.textContent = error.message;
                     return;
                 }
                 currentUser = data.user;
