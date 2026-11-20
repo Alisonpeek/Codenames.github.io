@@ -385,10 +385,11 @@
         }
 
         .player-left img {
-            width: 20px;
-            height: 20px;
+            width: 22px;
+            height: 22px;
             border-radius: 50%;
             object-fit: cover;
+            background: #162447;
         }
 
         .player.master::after {
@@ -699,31 +700,43 @@
             text-align: left;
         }
 
-        .avatar-picker {
+        /* ЗАГРУЗКА СВОЕГО АВАТАРА */
+        .avatar-upload-box {
             display: flex;
-            gap: 8px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin: 5px 0;
+            align-items: center;
+            gap: 14px;
+            background: rgba(0, 0, 0, 0.22);
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px dashed rgba(143, 148, 251, 0.5);
         }
 
-        .avatar-option {
-            width: 44px;
-            height: 44px;
+        .avatar-preview-img {
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: transform 0.2s;
+            object-fit: cover;
+            border: 2px solid var(--blue-team);
             background: #162447;
+            flex-shrink: 0;
         }
 
-        .avatar-option:hover {
-            transform: scale(1.1);
+        .file-upload-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            background: linear-gradient(135deg, #8f94fb, #4e54c8);
+            color: white;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s;
         }
 
-        .avatar-option.selected {
-            border-color: var(--gold);
-            box-shadow: 0 0 10px rgba(241, 196, 15, 0.6);
+        .file-upload-label:hover {
+            opacity: 0.9;
         }
 
         .profile-header-bar {
@@ -746,9 +759,10 @@
         }
 
         .profile-summary img {
-            width: 48px;
-            height: 48px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
+            object-fit: cover;
             border: 2px solid var(--blue-team);
             background: #162447;
         }
@@ -874,9 +888,10 @@
         }
 
         .player-waiting img {
-            width: 30px;
-            height: 30px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
+            object-fit: cover;
         }
 
         .close-modal-btn {
@@ -1090,9 +1105,18 @@
                 <div id="register-fields" style="display: none; flex-direction: column; gap: 10px;">
                     <label style="font-size: 0.85rem; color: #ccc;">Никнейм в игре:</label>
                     <input type="text" id="auth-username" placeholder="Например: ShadowAgent" maxlength="20">
-                    
-                    <label style="font-size: 0.85rem; color: #ccc;">Выберите аватар:</label>
-                    <div class="avatar-picker" id="avatar-picker"></div>
+
+                    <label style="font-size: 0.85rem; color: #ccc;">Ваш аватар (необязательно):</label>
+                    <div class="avatar-upload-box">
+                        <img id="reg-avatar-preview" class="avatar-preview-img" src="" alt="Preview">
+                        <div style="flex: 1;">
+                            <label for="reg-avatar-file" class="file-upload-label">
+                                <i class="fas fa-upload"></i> Загрузить фото
+                            </label>
+                            <input type="file" id="reg-avatar-file" accept="image/*" style="display: none;">
+                            <div style="font-size: 0.75rem; color: #aaa; margin-top: 4px;">JPG, PNG или WebP</div>
+                        </div>
+                    </div>
                 </div>
 
                 <label style="font-size: 0.85rem; color: #ccc;">Email:</label>
@@ -1184,7 +1208,7 @@
     </div>
 </div>
 
-<!-- МОДАЛЬНОЕ ОКНО: ПРОФИЛЬ, АВАТАР И ИСТОРИЯ МАТЧЕЙ -->
+<!-- МОДАЛЬНОЕ ОКНО: ПРОФИЛЬ, ЗАГРУЗКА АВАТАРА И ИСТОРИЯ МАТЧЕЙ -->
 <div class="modal-overlay" id="profile-modal" style="display: none;">
     <div class="modal-content">
         <button class="close-modal-btn" id="close-profile-btn">&times;</button>
@@ -1210,8 +1234,19 @@
         </div>
 
         <div style="margin: 15px 0;">
-            <label style="font-size: 0.9rem; color: #8f94fb; font-weight: bold;">Сменить аватар:</label>
-            <div class="avatar-picker" id="profile-avatar-picker" style="margin-top: 8px;"></div>
+            <label style="font-size: 0.9rem; color: #8f94fb; font-weight: bold; display: block; margin-bottom: 8px;">
+                Изменить аватар:
+            </label>
+            <div class="avatar-upload-box">
+                <img id="profile-avatar-preview" class="avatar-preview-img" src="" alt="Avatar">
+                <div style="flex: 1; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+                    <label for="profile-avatar-file" class="file-upload-label">
+                        <i class="fas fa-camera"></i> Загрузить свой аватар
+                    </label>
+                    <input type="file" id="profile-avatar-file" accept="image/*" style="display: none;">
+                    <button type="button" class="leave-btn btn-sm" id="reset-avatar-btn">Сбросить</button>
+                </div>
+            </div>
         </div>
 
         <h3 style="color: #8f94fb; margin-top: 15px; font-size: 1.1rem;">
@@ -1401,10 +1436,55 @@
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // =========================================================================
-    // 2. СЛОВАРЬ И АВАТАРЫ
+    // 2. ГЕНЕРАЦИЯ АВАТАРА ПО УМОЛЧАНИЮ (ЛОКАЛЬНЫЙ SVG БЕЗ ВНЕШНИХ СЕРВИСОВ)
     // =========================================================================
-    const AVATAR_SEEDS = ['Felix', 'Aneka', 'Midnight', 'Shadow', 'Ghost', 'Viper', 'Cyber', 'Nova', 'Raven', 'Storm'];
-    const getAvatarUrl = (seed) => `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${encodeURIComponent(seed || 'Agent')}`;
+    function makeDefaultAvatarDataUrl(name) {
+        const letter = ((name || 'A').trim()[0] || 'A').toUpperCase();
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+            <rect width="128" height="128" rx="64" fill="#2c3e50"/>
+            <circle cx="64" cy="64" r="60" fill="none" stroke="#3498db" stroke-width="4"/>
+            <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="56" font-weight="bold">${letter}</text>
+        </svg>`;
+        return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+    }
+
+    function resolveAvatar(profile) {
+        if (profile && profile.avatar_url && profile.avatar_url.trim() !== '') {
+            return profile.avatar_url;
+        }
+        return makeDefaultAvatarDataUrl(profile?.username || 'A');
+    }
+
+    // Сжатие загруженного пользователем фото до 160x160 JPEG Data URL (чтобы мгновенно сохранялось в БД без настройки Storage)
+    function compressImageFile(file, maxSize = 160) {
+        return new Promise((resolve, reject) => {
+            if (!file || !file.type.startsWith('image/')) {
+                reject(new Error('Выберите файл изображения'));
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = maxSize;
+                    canvas.height = maxSize;
+                    const ctx = canvas.getContext('2d');
+
+                    const minSide = Math.min(img.width, img.height);
+                    const sx = (img.width - minSide) / 2;
+                    const sy = (img.height - minSide) / 2;
+                    ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, maxSize, maxSize);
+
+                    resolve(canvas.toDataURL('image/jpeg', 0.82));
+                };
+                img.onerror = () => reject(new Error('Не удалось прочитать изображение'));
+                img.src = e.target.result;
+            };
+            reader.onerror = () => reject(new Error('Ошибка чтения файла'));
+            reader.readAsDataURL(file);
+        });
+    }
 
     const wordList = [
         'АИСТ', 'АКУЛА', 'БАБОЧКА', 'БЕЛКА', 'ВОЛК', 'ВОРОН', 'ДЕЛЬФИН', 'ДИНОЗАВР', 'ДРАКОН', 'ЕНОТ',
@@ -1440,13 +1520,12 @@
     // =========================================================================
     let currentUser = null;
     let currentProfile = null;
-    let selectedAvatarSeed = AVATAR_SEEDS[0];
+    let pendingRegAvatarDataUrl = '';
     let isRegisterMode = false;
 
-    let currentRoom = null;       // Запись из таблицы rooms
-    let roomPlayers = [];         // Массив из таблицы room_players (с join на profiles)
-    let roomChannel = null;       // Канал Supabase Realtime
-    let timerInterval = null;
+    let currentRoom = null;
+    let roomPlayers = [];
+    let roomChannel = null;
 
     let gameState = {
         cards: [],
@@ -1467,94 +1546,124 @@
     };
 
     // =========================================================================
-    // 4. ИНИЦИАЛИЗАЦИЯ И АУТЕНТИФИКАЦИЯ (SUPABASE AUTH)
+    // 4. ПРОФИЛЬ И АВТОРИЗАЦИЯ (С АВТО-СОЗДАНИЕМ ПРОФИЛЯ ЕСЛИ ЕГО НЕТ В БД)
     // =========================================================================
-    function renderAvatarPickers() {
-        ['avatar-picker', 'profile-avatar-picker'].forEach(containerId => {
-            const container = document.getElementById(containerId);
-            if (!container) return;
-            container.innerHTML = '';
-            AVATAR_SEEDS.forEach(seed => {
-                const img = document.createElement('img');
-                img.src = getAvatarUrl(seed);
-                img.className = 'avatar-option' + (seed === selectedAvatarSeed ? ' selected' : '');
-                img.title = seed;
-                img.onclick = async () => {
-                    selectedAvatarSeed = seed;
-                    document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
-                    img.classList.add('selected');
-                    if (containerId === 'profile-avatar-picker' && currentUser) {
-                        await updateAvatar(seed);
-                    }
-                };
-                container.appendChild(img);
-            });
-        });
-    }
+    async function ensureUserProfile(user) {
+        if (!user) return null;
 
-    async function loadUserProfile(userId) {
-        const { data, error } = await sb
+        let { data, error } = await sb
             .from('profiles')
             .select('*')
-            .eq('id', userId)
-            .single();
+            .eq('id', user.id)
+            .maybeSingle();
 
-        if (error) {
-            console.error('Ошибка загрузки профиля:', error);
-            return null;
+        // Если профиль ещё не создан триггером (например, пользователь регистрировался до создания таблицы profiles) — создаём его прямо сейчас!
+        if (!data) {
+            const fallbackUsername =
+                user.user_metadata?.username ||
+                (user.email ? user.email.split('@')[0] : 'Agent') + '_' + user.id.slice(0, 4);
+
+            const { data: inserted, error: insertErr } = await sb
+                .from('profiles')
+                .upsert({
+                    id: user.id,
+                    username: fallbackUsername,
+                    avatar_url: pendingRegAvatarDataUrl || ''
+                }, { onConflict: 'id' })
+                .select()
+                .single();
+
+            if (insertErr) {
+                console.error('Не удалось создать профиль:', insertErr);
+                // Локальный запасной объект, чтобы интерфейс не падал
+                currentProfile = {
+                    id: user.id,
+                    username: fallbackUsername,
+                    avatar_url: pendingRegAvatarDataUrl || '',
+                    elo: 1000,
+                    wins: 0,
+                    games_played: 0
+                };
+                updateProfileUI();
+                return currentProfile;
+            }
+            data = inserted;
+        } else if (pendingRegAvatarDataUrl) {
+            // Если пользователь выбрал фото при регистрации — сохраняем его в профиль
+            const { data: updated } = await sb
+                .from('profiles')
+                .update({ avatar_url: pendingRegAvatarDataUrl })
+                .eq('id', user.id)
+                .select()
+                .single();
+            if (updated) data = updated;
+            pendingRegAvatarDataUrl = '';
         }
+
         currentProfile = data;
-        selectedAvatarSeed = data.avatar_seed || AVATAR_SEEDS[0];
         updateProfileUI();
         return data;
     }
 
     function updateProfileUI() {
         if (!currentProfile) return;
-        const avatarUrl = getAvatarUrl(currentProfile.avatar_seed);
+        const avatarSrc = resolveAvatar(currentProfile);
 
-        document.getElementById('lobby-user-avatar').src = avatarUrl;
+        document.getElementById('lobby-user-avatar').src = avatarSrc;
         document.getElementById('lobby-user-name').textContent = currentProfile.username;
         document.getElementById('lobby-user-elo').textContent = `${currentProfile.elo} ELO`;
         document.getElementById('lobby-user-wins').textContent = currentProfile.wins;
         document.getElementById('lobby-user-games').textContent = currentProfile.games_played;
 
-        document.getElementById('header-user-avatar').src = avatarUrl;
+        document.getElementById('header-user-avatar').src = avatarSrc;
         document.getElementById('header-user-name').textContent = currentProfile.username;
         document.getElementById('header-user-elo').textContent = `${currentProfile.elo} ELO`;
+
+        const profPreview = document.getElementById('profile-avatar-preview');
+        if (profPreview) profPreview.src = avatarSrc;
     }
 
-    async function updateAvatar(seed) {
-        const { error } = await sb
+    async function saveCustomAvatar(dataUrl) {
+        if (!currentUser) return;
+        const { data, error } = await sb
             .from('profiles')
-            .update({ avatar_seed: seed })
-            .eq('id', currentUser.id);
-        if (!error) {
-            currentProfile.avatar_seed = seed;
-            updateProfileUI();
+            .update({ avatar_url: dataUrl })
+            .eq('id', currentUser.id)
+            .select()
+            .single();
+
+        if (error) {
+            alert('Ошибка сохранения аватара: ' + error.message);
+            return;
         }
+        currentProfile = data;
+        updateProfileUI();
+        if (currentRoom) await fetchRoomPlayers();
     }
 
     async function openProfileModal() {
-        if (!currentProfile) return;
-        await loadUserProfile(currentUser.id);
-        renderAvatarPickers();
-
-        document.getElementById('stat-elo').textContent = currentProfile.elo;
-        document.getElementById('stat-games').textContent = currentProfile.games_played;
-        document.getElementById('stat-wins').textContent = currentProfile.wins;
-        const wr = currentProfile.games_played > 0
-            ? Math.round((currentProfile.wins / currentProfile.games_played) * 100)
-            : 0;
-        document.getElementById('stat-winrate').textContent = `${wr}%`;
-
+        if (!currentUser) return;
+        // Сразу открываем модалку, не дожидаясь сети
         document.getElementById('profile-modal').style.display = 'flex';
+
+        await ensureUserProfile(currentUser);
+        if (currentProfile) {
+            document.getElementById('stat-elo').textContent = currentProfile.elo;
+            document.getElementById('stat-games').textContent = currentProfile.games_played;
+            document.getElementById('stat-wins').textContent = currentProfile.wins;
+            const wr = currentProfile.games_played > 0
+                ? Math.round((currentProfile.wins / currentProfile.games_played) * 100)
+                : 0;
+            document.getElementById('stat-winrate').textContent = `${wr}%`;
+            document.getElementById('profile-avatar-preview').src = resolveAvatar(currentProfile);
+        }
+
         await loadMatchHistory();
     }
 
     async function loadMatchHistory() {
         const list = document.getElementById('match-history-list');
-        list.innerHTML = '<p style="color: #aaa; text-align: center;">Загрузка...</p>';
+        list.innerHTML = '<p style="color: #aaa; text-align: center; padding: 12px;">Загрузка истории...</p>';
 
         const { data, error } = await sb
             .from('match_participants')
@@ -1574,8 +1683,13 @@
             .order('id', { ascending: false })
             .limit(15);
 
-        if (error || !data || data.length === 0) {
-            list.innerHTML = '<p style="color: #aaa; text-align: center; padding: 15px;">Пока нет сыгранных матчей</p>';
+        if (error) {
+            list.innerHTML = `<p style="color: #ff7675; text-align: center; padding: 12px;">Ошибка загрузки матчей: ${escapeHtml(error.message)}</p>`;
+            return;
+        }
+
+        if (!data || data.length === 0) {
+            list.innerHTML = '<p style="color: #aaa; text-align: center; padding: 15px;">У вас пока нет сыгранных матчей</p>';
             return;
         }
 
@@ -1594,7 +1708,7 @@
             el.className = `match-item ${item.is_winner ? 'win' : 'loss'}`;
             el.innerHTML = `
                 <div>
-                    <strong>${item.is_winner ? '🏆 Победа' : '💀 Поражение'}</strong> • Команда: ${teamRu} (${roleRu})
+                    <strong>${item.is_winner ? '🏆 Победа' : '💀 Поражение'}</strong> • ${teamRu} (${roleRu})
                     <div style="font-size: 0.75rem; color: #aaa;">Комната #${match?.room_code || '---'} • ${dateStr}</div>
                 </div>
                 <div class="elo-delta ${deltaClass}">${deltaSign}${item.elo_change} ELO</div>
@@ -1650,6 +1764,7 @@
     }
 
     async function createRoom() {
+        await ensureUserProfile(currentUser);
         const code = generateRoomCode();
         const initialState = buildInitialGameState(1);
 
@@ -1673,6 +1788,7 @@
     }
 
     async function joinRoomByCode(rawCode) {
+        await ensureUserProfile(currentUser);
         const code = rawCode.trim().toUpperCase();
         const errEl = document.getElementById('join-error');
         errEl.textContent = '';
@@ -1688,7 +1804,6 @@
             return;
         }
 
-        // Добавляем или обновляем игрока в room_players
         const { error: joinErr } = await sb
             .from('room_players')
             .upsert({
@@ -1752,7 +1867,7 @@
                 role,
                 profiles (
                     username,
-                    avatar_seed,
+                    avatar_url,
                     elo
                 )
             `)
@@ -1853,7 +1968,7 @@
         await sb.from('room_messages').insert({
             room_code: currentRoom.code,
             user_id: currentUser.id,
-            sender_name: currentProfile.username,
+            sender_name: currentProfile?.username || 'Агент',
             message: text.trim(),
             msg_type: msgType
         });
@@ -1903,7 +2018,7 @@
             row.className = 'player-waiting';
             row.innerHTML = `
                 <div class="player-info">
-                    <img src="${getAvatarUrl(prof.avatar_seed)}" alt="Avatar">
+                    <img src="${resolveAvatar(prof)}" alt="Avatar">
                     <div>
                         <span style="font-weight: bold;">${escapeHtml(prof.username || 'Агент')}</span>
                         <span class="elo-badge">${prof.elo || 1000} ELO</span>
@@ -1974,7 +2089,6 @@
         const me = getMyPlayerRecord();
         if (!me || !me.team) return;
 
-        // Снимаем роль мастера у предыдущего мастера этой команды
         await sb
             .from('room_players')
             .update({ role: 'agent' })
@@ -2005,7 +2119,7 @@
             el.className = `player ${p.role === 'master' ? 'master' : ''} ${p.user_id === currentUser?.id ? 'me' : ''}`;
             el.innerHTML = `
                 <div class="player-left">
-                    <img src="${getAvatarUrl(prof.avatar_seed)}" alt="">
+                    <img src="${resolveAvatar(prof)}" alt="">
                     <span>${escapeHtml(prof.username || 'Агент')}</span>
                 </div>
                 <span style="font-size: 0.7rem; color: var(--gold);">${prof.elo || 1000}</span>
@@ -2231,7 +2345,6 @@
         gameState.timerRunning = false;
         gameState.cards.forEach(c => c.revealed = true);
 
-        // Записываем матч и обновляем ELO только один раз (инициатор последнего хода)
         if (!gameState.eloSettled) {
             gameState.eloSettled = true;
             await recordMatchAndElo(winningTeam);
@@ -2245,7 +2358,6 @@
         const activePlayers = roomPlayers.filter(p => p.team === 'blue' || p.team === 'red');
         if (activePlayers.length === 0) return;
 
-        // 1. Создаём запись в matches
         const { data: match, error: matchErr } = await sb
             .from('matches')
             .insert({
@@ -2262,7 +2374,6 @@
             return;
         }
 
-        // 2. Считаем средний ELO команд (стандартная формула Эло K=24)
         const bluePlayers = activePlayers.filter(p => p.team === 'blue');
         const redPlayers = activePlayers.filter(p => p.team === 'red');
         const avgBlue = bluePlayers.length ? bluePlayers.reduce((s, p) => s + (p.profiles?.elo || 1000), 0) / bluePlayers.length : 1000;
@@ -2273,7 +2384,6 @@
         const deltaBlue = Math.round(24 * (actualBlue - expectedBlue));
         const deltaRed = -deltaBlue;
 
-        // 3. Сохраняем участников и обновляем профили
         for (const p of activePlayers) {
             const isWinner = p.team === winningTeam;
             const eloChange = p.team === 'blue' ? deltaBlue : deltaRed;
@@ -2296,7 +2406,7 @@
             });
         }
 
-        await loadUserProfile(currentUser.id);
+        await ensureUserProfile(currentUser);
     }
 
     function showWinnerCelebration(winningTeam) {
@@ -2325,7 +2435,6 @@
         const nextNum = (gameState.gameNumber || 1) + 1;
         gameState = buildInitialGameState(nextNum);
 
-        // Сбрасываем роли мастеров на новый раунд
         await sb
             .from('room_players')
             .update({ role: 'agent' })
@@ -2339,7 +2448,6 @@
         await sendRoomMessage(`🔄 Начался раунд #${nextNum}! Назначьте новых шпион-мастеров.`, 'game-start');
     }
 
-    // Локальный тик визуального таймера (синхронизирован по gameState.timeLeft)
     function updateTimerUI() {
         const el = document.getElementById('timer');
         if (!gameState.timerRunning || gameState.timeLeft <= 0) {
@@ -2358,7 +2466,6 @@
             if (gameState.timeLeft > 0) {
                 gameState.timeLeft--;
                 updateTimerUI();
-                // Создатель комнаты фиксирует истечение времени в БД
                 if (gameState.timeLeft === 0 && currentRoom.creator_id === currentUser?.id) {
                     switchTurnState();
                     await pushGameState();
@@ -2397,13 +2504,13 @@
     // 10. ОБРАБОТЧИКИ СОБЫТИЙ DOM
     // =========================================================================
     document.addEventListener('DOMContentLoaded', async () => {
-        renderAvatarPickers();
+        document.getElementById('reg-avatar-preview').src = makeDefaultAvatarDataUrl('A');
 
         // Проверка текущей сессии Supabase
         const { data: { session } } = await sb.auth.getSession();
         if (session?.user) {
             currentUser = session.user;
-            await loadUserProfile(currentUser.id);
+            await ensureUserProfile(currentUser);
             document.getElementById('auth-section').style.display = 'none';
             document.getElementById('room-select-section').style.display = 'block';
         }
@@ -2427,6 +2534,42 @@
             document.getElementById('auth-error').textContent = '';
         };
 
+        // Превью буквы при вводе ника
+        document.getElementById('auth-username').addEventListener('input', (e) => {
+            if (!pendingRegAvatarDataUrl) {
+                document.getElementById('reg-avatar-preview').src = makeDefaultAvatarDataUrl(e.target.value || 'A');
+            }
+        });
+
+        // Загрузка своего аватара при регистрации
+        document.getElementById('reg-avatar-file').addEventListener('change', async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            try {
+                pendingRegAvatarDataUrl = await compressImageFile(file, 160);
+                document.getElementById('reg-avatar-preview').src = pendingRegAvatarDataUrl;
+            } catch (err) {
+                alert(err.message);
+            }
+        });
+
+        // Загрузка своего аватара в окне профиля
+        document.getElementById('profile-avatar-file').addEventListener('change', async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            try {
+                const compressed = await compressImageFile(file, 160);
+                document.getElementById('profile-avatar-preview').src = compressed;
+                await saveCustomAvatar(compressed);
+            } catch (err) {
+                alert(err.message);
+            }
+        });
+
+        document.getElementById('reset-avatar-btn').onclick = async () => {
+            await saveCustomAvatar('');
+        };
+
         // Отправка формы входа/регистрации
         document.getElementById('auth-form').onsubmit = async (e) => {
             e.preventDefault();
@@ -2436,8 +2579,8 @@
             const errBox = document.getElementById('auth-error');
             errBox.textContent = '';
 
-            if (SUPABASE_URL.includes('YOUR_PROJECT_ID')) {
-                errBox.textContent = 'Вставьте SUPABASE_URL и SUPABASE_ANON_KEY в код файла!';
+            if (SUPABASE_ANON_KEY === 'YOUR_PUBLISHABLE_KEY') {
+                errBox.textContent = 'Вставьте ваш Publishable key в SUPABASE_ANON_KEY!';
                 return;
             }
 
@@ -2450,10 +2593,7 @@
                     email,
                     password,
                     options: {
-                        data: {
-                            username,
-                            avatar_seed: selectedAvatarSeed
-                        }
+                        data: { username }
                     }
                 });
                 if (error) {
@@ -2462,7 +2602,7 @@
                 }
                 if (data.user) {
                     currentUser = data.user;
-                    await loadUserProfile(currentUser.id);
+                    await ensureUserProfile(currentUser);
                     document.getElementById('auth-section').style.display = 'none';
                     document.getElementById('room-select-section').style.display = 'block';
                 }
@@ -2473,7 +2613,7 @@
                     return;
                 }
                 currentUser = data.user;
-                await loadUserProfile(currentUser.id);
+                await ensureUserProfile(currentUser);
                 document.getElementById('auth-section').style.display = 'none';
                 document.getElementById('room-select-section').style.display = 'block';
             }
