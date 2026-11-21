@@ -1588,6 +1588,40 @@
     const TURN_SECONDS = 90;
     const HOLD_DURATION_MS = 650;
 
+    let isRestoringSession = false;
+
+    function hasStoredAuthSession() {
+        try {
+            return Object.keys(localStorage).some(
+                k => k.startsWith('sb-') && k.endsWith('-auth-token') && localStorage.getItem(k)
+            );
+        } catch (_) {
+            return false;
+        }
+    }
+
+    function hasSavedRoomCode() {
+        try {
+            const code = sessionStorage.getItem(ACTIVE_ROOM_STORAGE_KEY);
+            return Boolean(code && code.trim().length === 6);
+        } catch (_) {
+            return false;
+        }
+    }
+
+    // Скрываем стартовое лобби до завершения проверки сессии и комнаты, чтобы не мелькало при F5
+    if (hasStoredAuthSession() && hasSavedRoomCode()) {
+        document.documentElement.insertAdjacentHTML(
+            'beforeend',
+            '<style id="boot-hide-lobby">#lobby-modal{display:none!important;}</style>'
+        );
+    }
+
+    function removeBootHideStyle() {
+        const el = document.getElementById('boot-hide-lobby');
+        if (el) el.remove();
+    }
+
     function makeDefaultAvatarDataUrl(name) {
         const letter = ((name || 'A').trim()[0] || 'A').toUpperCase();
         const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
@@ -1766,11 +1800,14 @@
     };
 
     function showLoggedInLobbyUI() {
+        removeBootHideStyle();
         document.getElementById('auth-section').style.display = 'none';
         document.getElementById('room-select-section').style.display = 'block';
+        document.getElementById('lobby-modal').style.display = 'flex';
     }
 
     function showAuthFormUI() {
+        removeBootHideStyle();
         document.getElementById('room-select-section').style.display = 'none';
         document.getElementById('game-container').style.display = 'none';
         document.getElementById('lobby-modal').style.display = 'flex';
@@ -2063,7 +2100,7 @@
 
     async function joinRoomByCode(rawCode, options = { silentNotFound: false }) {
         const user = await getValidUser();
-        if (!user) return;
+        if (!user) return false;
         applyFallbackOrCachedProfile(user);
 
         const code = rawCode.trim().toUpperCase();
@@ -2131,6 +2168,7 @@
     }
 
     function showLobbyRoomUI() {
+        removeBootHideStyle();
         document.getElementById('lobby-modal').style.display = 'flex';
         document.getElementById('auth-section').style.display = 'none';
         document.getElementById('room-select-section').style.display = 'block';
@@ -2150,6 +2188,7 @@
     }
 
     function enterGameScreen() {
+        removeBootHideStyle();
         document.getElementById('lobby-modal').style.display = 'none';
         document.getElementById('game-container').style.display = 'block';
         document.getElementById('subtitle-room-code').textContent = currentRoom.code;
@@ -2429,9 +2468,9 @@
         document.getElementById('game-container').style.display = 'none';
         document.getElementById('winner-celebration').classList.remove('active');
         document.getElementById('game-paused-overlay').classList.remove('active');
-        document.getElementById('lobby-modal').style.display = 'flex';
         document.getElementById('game-lobby').style.display = 'none';
         document.getElementById('lobby-choice-cards').style.display = 'flex';
+        showLoggedInLobbyUI();
     }
 
     async function joinTeam(team) {
@@ -3117,13 +3156,14 @@
             if (newSession?.user) {
                 currentUser = newSession.user;
                 applyFallbackOrCachedProfile(currentUser);
-                if (!currentRoom) {
+                if (!isRestoringSession && !currentRoom) {
                     showLoggedInLobbyUI();
                 }
                 ensureUserProfile(currentUser);
             }
         });
 
+        isRestoringSession = true;
         try {
             let { data: { session } } = await sb.auth.getSession();
             if (!session) {
@@ -3144,8 +3184,13 @@
                     showLoggedInLobbyUI();
                 }
                 await ensureUserProfile(currentUser);
+            } else {
+                showAuthFormUI();
             }
-        } catch (_) {}
+        } finally {
+            isRestoringSession = false;
+            removeBootHideStyle();
+        }
 
         document.getElementById('tab-login').onclick = () => {
             isRegisterMode = false;
