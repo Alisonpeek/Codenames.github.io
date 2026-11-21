@@ -1573,7 +1573,7 @@
 
 <script>
     const SUPABASE_URL = 'https://poudbyptdieyifbfdtet.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_pFDRFkpxo6PlZJM2Z5ZRxQ_BXIFkfnN';
+    const SUPABASE_ANON_KEY = 'YOUR_PUBLISHABLE_KEY';
     const ACTIVE_ROOM_STORAGE_KEY = 'codenames_active_room';
 
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -1603,6 +1603,23 @@
             return profile.avatar_url;
         }
         return makeDefaultAvatarDataUrl(profile?.username || 'A');
+    }
+
+    function getCachedProfile(userId) {
+        if (!userId) return null;
+        try {
+            const raw = localStorage.getItem(`codenames_profile_${userId}`);
+            return raw ? JSON.parse(raw) : null;
+        } catch (_) {
+            return null;
+        }
+    }
+
+    function setCachedProfile(profile) {
+        if (!profile || !profile.id) return;
+        try {
+            localStorage.setItem(`codenames_profile_${profile.id}`, JSON.stringify(profile));
+        } catch (_) {}
     }
 
     function compressImageFile(file, maxSize = 160) {
@@ -1664,7 +1681,7 @@
         'МЕХАНИК', 'МОРЯК', 'МУЗЫКАНТ', 'НИНДЗЯ', 'ОХОТНИК', 'ПЕКАРЬ', 'ПИРАТ', 'ПИСАТЕЛЬ', 'ПОВАР', 'ПОЛИЦЕЙСКИЙ',
         'ПОЖАРНЫЙ', 'ПРИЗРАК', 'ПРОГРАММИСТ', 'ПРОФЕССОР', 'РАЗВЕДЧИК', 'РЕЖИССЁР', 'РЕПОРТЁР', 'РЫЦАРЬ', 'САМУРАЙ', 'СКУЛЬПТОР',
         'СНАЙПЕР', 'СУДЬЯ', 'ТРЕНЕР', 'УЧЁНЫЙ', 'ФАРАОН', 'ФИЛОСОФ', 'ФОКУСНИК', 'ФОТОГРАФ', 'ХИМИК', 'ХИРУРГ',
-        'ХУДОЖНИК', 'ШАХТЁР', 'ШПИОН', 'ЭКСПЕДИЦИЯ', 'ЮРИСТ',
+        'ХУДОЖНИК', 'ШАХТЁР', 'ШПИОН', 'ЭКСПЕРИМЕНТ', 'ЮРИСТ',
         'АЛГОРИТМ', 'АНТЕННА', 'АРХИВ', 'БАТАРЕЯ', 'БИНОКЛЬ', 'БЛОК', 'БОМБА', 'БУДИЛЬНИК', 'ВЕКТОР', 'ВЕЛИК',
         'ВЕНТИЛЯТОР', 'ВИНТ', 'ВИРУС', 'ГЛОБУС', 'ГРАФИК', 'ДВИГАТЕЛЬ', 'ДИНАМИТ', 'ДИСК', 'ДРОН', 'ЗАМОК',
         'ЗЕРКАЛО', 'ЗОЛОТО', 'ЗОНТ', 'ИГЛА', 'ИНДЕКС', 'КАБЕЛЬ', 'КАМЕРА', 'КАРТА', 'КЛАВИША', 'КЛЕЙ',
@@ -1760,8 +1777,31 @@
         document.getElementById('auth-section').style.display = 'block';
     }
 
+    function applyFallbackOrCachedProfile(user) {
+        if (!user) return;
+        const cached = getCachedProfile(user.id);
+        if (cached) {
+            currentProfile = { ...cached, id: user.id };
+            updateProfileUI();
+            return;
+        }
+        const fallbackUsername =
+            user.user_metadata?.username ||
+            (user.email ? user.email.split('@')[0] : 'Agent') + '_' + user.id.slice(0, 4);
+        currentProfile = {
+            id: user.id,
+            username: fallbackUsername,
+            avatar_url: pendingRegAvatarDataUrl || '',
+            elo: 1000,
+            wins: 0,
+            games_played: 0
+        };
+        updateProfileUI();
+    }
+
     async function ensureUserProfile(user) {
         if (!user) return null;
+        applyFallbackOrCachedProfile(user);
 
         try {
             let { data, error } = await sb
@@ -1771,20 +1811,6 @@
                 .maybeSingle();
 
             if (error) {
-                if (!currentProfile) {
-                    const fallbackUsername =
-                        user.user_metadata?.username ||
-                        (user.email ? user.email.split('@')[0] : 'Agent') + '_' + user.id.slice(0, 4);
-                    currentProfile = {
-                        id: user.id,
-                        username: fallbackUsername,
-                        avatar_url: pendingRegAvatarDataUrl || '',
-                        elo: 1000,
-                        wins: 0,
-                        games_played: 0
-                    };
-                    updateProfileUI();
-                }
                 return currentProfile;
             }
 
@@ -1806,16 +1832,7 @@
                     .select()
                     .maybeSingle();
 
-                if (insertErr) {
-                    currentProfile = {
-                        id: user.id,
-                        username: fallbackUsername,
-                        avatar_url: pendingRegAvatarDataUrl || '',
-                        elo: 1000,
-                        wins: 0,
-                        games_played: 0
-                    };
-                    updateProfileUI();
+                if (insertErr || !inserted) {
                     return currentProfile;
                 }
                 data = inserted;
@@ -1831,20 +1848,10 @@
             }
 
             currentProfile = data;
+            setCachedProfile(currentProfile);
             updateProfileUI();
             return data;
         } catch (_) {
-            if (!currentProfile) {
-                currentProfile = {
-                    id: user.id,
-                    username: user.email ? user.email.split('@')[0] : 'Agent',
-                    avatar_url: '',
-                    elo: 1000,
-                    wins: 0,
-                    games_played: 0
-                };
-                updateProfileUI();
-            }
             return currentProfile;
         }
     }
@@ -1882,6 +1889,7 @@
             return;
         }
         currentProfile = data;
+        setCachedProfile(currentProfile);
         updateProfileUI();
         if (currentRoom) await fetchRoomPlayers();
     }
@@ -2056,7 +2064,7 @@
     async function joinRoomByCode(rawCode, options = { silentNotFound: false }) {
         const user = await getValidUser();
         if (!user) return;
-        await ensureUserProfile(user);
+        applyFallbackOrCachedProfile(user);
 
         const code = rawCode.trim().toUpperCase();
         const errEl = document.getElementById('join-error');
@@ -2070,11 +2078,10 @@
 
         if (error || !room) {
             if (options.silentNotFound) {
-                sessionStorage.removeItem(ACTIVE_ROOM_STORAGE_KEY);
-                return;
+                return false;
             }
             errEl.textContent = error ? error.message : 'Комната с таким кодом не найдена';
-            return;
+            return false;
         }
 
         const { data: existingPlayer } = await sb
@@ -2096,7 +2103,7 @@
                 if (!options.silentNotFound) {
                     errEl.textContent = 'Не удалось войти в комнату: ' + insertPlayerErr.message;
                 }
-                return;
+                return false;
             }
         }
 
@@ -2110,15 +2117,17 @@
             skipVotes: Array.isArray(room.game_state?.skipVotes) ? room.game_state.skipVotes : []
         };
 
-        await fetchRoomPlayers();
-        await fetchRoomMessages();
-        subscribeToRoom(code);
-
         if (room.status === 'lobby') {
             showLobbyRoomUI();
         } else {
             enterGameScreen();
         }
+
+        await fetchRoomPlayers();
+        await fetchRoomMessages();
+        subscribeToRoom(code);
+        ensureUserProfile(user);
+        return true;
     }
 
     function showLobbyRoomUI() {
@@ -3107,8 +3116,11 @@
             }
             if (newSession?.user) {
                 currentUser = newSession.user;
-                showLoggedInLobbyUI();
-                await ensureUserProfile(currentUser);
+                applyFallbackOrCachedProfile(currentUser);
+                if (!currentRoom) {
+                    showLoggedInLobbyUI();
+                }
+                ensureUserProfile(currentUser);
             }
         });
 
@@ -3120,13 +3132,18 @@
             }
             if (session?.user) {
                 currentUser = session.user;
-                showLoggedInLobbyUI();
-                await ensureUserProfile(currentUser);
+                applyFallbackOrCachedProfile(currentUser);
 
                 const savedRoomCode = sessionStorage.getItem(ACTIVE_ROOM_STORAGE_KEY);
+                let rejoined = false;
                 if (savedRoomCode && savedRoomCode.length === 6) {
-                    await joinRoomByCode(savedRoomCode, { silentNotFound: true });
+                    rejoined = await joinRoomByCode(savedRoomCode, { silentNotFound: true });
                 }
+
+                if (!rejoined) {
+                    showLoggedInLobbyUI();
+                }
+                await ensureUserProfile(currentUser);
             }
         } catch (_) {}
 
