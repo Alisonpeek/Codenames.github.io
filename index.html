@@ -137,6 +137,27 @@
             white-space: nowrap;
         }
 
+        .clickable-user {
+            cursor: pointer;
+            transition: color 0.15s ease, opacity 0.15s ease;
+        }
+
+        .clickable-user:hover {
+            color: var(--gold);
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+
+        .clickable-avatar {
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .clickable-avatar:hover {
+            transform: scale(1.08);
+            box-shadow: 0 0 0 2px var(--gold);
+        }
+
         .game-container {
             display: grid;
             grid-template-columns: 3fr 1fr;
@@ -228,7 +249,6 @@
             box-shadow: 0 0 0 2px var(--gold), 0 8px 20px rgba(241, 196, 15, 0.25);
         }
 
-        /* Цветной предпросмотр у мастера, когда слово выбрано агентами */
         .card.master-picked-preview.blue {
             background: rgba(52, 152, 219, 0.45) !important;
             border-color: rgba(52, 152, 219, 0.9) !important;
@@ -423,7 +443,7 @@
             overflow: hidden;
         }
 
-        .player-left span {
+        .player-left span.player-name-text {
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -754,6 +774,10 @@
             overflow-y: auto;
         }
 
+        #profile-modal {
+            z-index: 220;
+        }
+
         .modal-content, .lobby-container {
             background: linear-gradient(135deg, var(--panel-bg), #1a335a);
             max-width: 750px;
@@ -765,6 +789,27 @@
             position: relative;
             max-height: 92vh;
             overflow-y: auto;
+        }
+
+        .viewed-user-banner {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(0, 0, 0, 0.28);
+            padding: 12px 14px;
+            border-radius: 10px;
+            margin: 12px 0;
+            border: 1px solid rgba(143, 148, 251, 0.25);
+        }
+
+        .viewed-user-banner img {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--gold);
+            background: #162447;
+            flex-shrink: 0;
         }
 
         .auth-box {
@@ -1366,11 +1411,22 @@
     </div>
 </div>
 
-<!-- МОДАЛЬНОЕ ОКНО: ПРОФИЛЬ -->
+<!-- МОДАЛЬНОЕ ОКНО: ПРОФИЛЬ (СВОЙ ИЛИ ЧУЖОЙ) -->
 <div class="modal-overlay" id="profile-modal" style="display: none;">
     <div class="modal-content">
         <button class="close-modal-btn" id="close-profile-btn">&times;</button>
-        <h2><i class="fas fa-id-card"></i> Профиль агента</h2>
+        <h2 id="profile-modal-title"><i class="fas fa-id-card"></i> Профиль агента</h2>
+
+        <div class="viewed-user-banner" id="viewed-user-banner" style="display: none;">
+            <img id="viewed-user-avatar" src="" alt="Avatar">
+            <div>
+                <div style="font-size: 1.15rem; font-weight: bold;">
+                    <span id="viewed-user-name">Агент</span>
+                    <span class="elo-badge" id="viewed-user-elo-badge">1000 ELO</span>
+                </div>
+                <div id="viewed-user-subtitle" style="font-size: 0.82rem; color: #aaa; margin-top: 2px;"></div>
+            </div>
+        </div>
 
         <div class="stats-grid">
             <div class="stat-card">
@@ -1391,7 +1447,7 @@
             </div>
         </div>
 
-        <div style="margin: 14px 0;">
+        <div id="own-avatar-editor" style="margin: 14px 0;">
             <label style="font-size: 0.88rem; color: #8f94fb; font-weight: bold; display: block; margin-bottom: 8px;">
                 Изменить аватар:
             </label>
@@ -1823,7 +1879,7 @@
     let pickDelayStartTime = null;
     let pickDelayRaf = null;
     let activeConfirmCardId = null;
-    let isSelectingCard = false;
+    let isCommittingCard = false;
 
     let gameState = {
         cards: [],
@@ -1979,25 +2035,94 @@
         if (currentRoom) await fetchRoomPlayers();
     }
 
-    async function openProfileModal() {
+    async function openProfileModal(targetUserId = null) {
         const user = await getValidUser();
-        if (!user) return;
+        const effectiveTargetId = targetUserId || user?.id;
+        if (!effectiveTargetId) return;
+
+        const isOwnProfile = Boolean(user && effectiveTargetId === user.id);
         document.getElementById('profile-modal').style.display = 'flex';
 
-        await ensureUserProfile(user);
-        if (currentProfile) {
-            document.getElementById('stat-elo').textContent = currentProfile.elo;
-            document.getElementById('stat-games').textContent = currentProfile.games_played;
-            document.getElementById('stat-wins').textContent = currentProfile.wins;
-            const wr = currentProfile.games_played > 0
-                ? Math.round((currentProfile.wins / currentProfile.games_played) * 100)
-                : 0;
-            document.getElementById('stat-winrate').textContent = `${wr}%`;
-            document.getElementById('profile-avatar-preview').src = resolveAvatar(currentProfile);
+        let targetProfile = null;
+
+        if (isOwnProfile) {
+            await ensureUserProfile(user);
+            targetProfile = currentProfile;
+        } else {
+            const roomMatch = roomPlayers.find(p => p.user_id === effectiveTargetId)?.profiles;
+            const cached = getCachedProfile(effectiveTargetId);
+            targetProfile = {
+                id: effectiveTargetId,
+                username: roomMatch?.username || cached?.username || 'Агент',
+                avatar_url: roomMatch?.avatar_url ?? cached?.avatar_url ?? '',
+                elo: roomMatch?.elo ?? cached?.elo ?? 1000,
+                wins: cached?.wins ?? 0,
+                games_played: cached?.games_played ?? 0
+            };
+
+            try {
+                const { data } = await sb
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', effectiveTargetId)
+                    .maybeSingle();
+                if (data) {
+                    targetProfile = data;
+                    setCachedProfile(data);
+                }
+            } catch (_) {}
         }
 
-        await loadMatchHistory(user.id);
+        const titleEl = document.getElementById('profile-modal-title');
+        const bannerEl = document.getElementById('viewed-user-banner');
+        const ownAvatarBox = document.getElementById('own-avatar-editor');
+
+        if (isOwnProfile) {
+            titleEl.innerHTML = '<i class="fas fa-id-card"></i> Профиль агента';
+            bannerEl.style.display = 'none';
+            ownAvatarBox.style.display = 'block';
+        } else {
+            titleEl.innerHTML = '<i class="fas fa-user-secret"></i> Досье игрока';
+            bannerEl.style.display = 'flex';
+            ownAvatarBox.style.display = 'none';
+
+            document.getElementById('viewed-user-avatar').src = resolveAvatar(targetProfile);
+            document.getElementById('viewed-user-name').textContent = targetProfile.username || 'Агент';
+            document.getElementById('viewed-user-elo-badge').textContent = `${targetProfile.elo ?? 1000} ELO`;
+
+            const rp = roomPlayers.find(p => p.user_id === effectiveTargetId);
+            if (rp?.team) {
+                const tRu = rp.team === 'blue' ? 'Синие' : 'Красные';
+                const rRu = rp.role === 'master' ? 'Шпион-мастер 👑' : 'Агент';
+                document.getElementById('viewed-user-subtitle').textContent = `В комнате: ${tRu} • ${rRu}`;
+            } else if (currentRoom) {
+                document.getElementById('viewed-user-subtitle').textContent = 'В комнате: Наблюдатель';
+            } else {
+                document.getElementById('viewed-user-subtitle').textContent = 'Игрок Codenames Online';
+            }
+        }
+
+        if (targetProfile) {
+            const games = targetProfile.games_played ?? 0;
+            const wins = targetProfile.wins ?? 0;
+            const wr = games > 0 ? Math.round((wins / games) * 100) : 0;
+
+            document.getElementById('stat-elo').textContent = targetProfile.elo ?? 1000;
+            document.getElementById('stat-games').textContent = games;
+            document.getElementById('stat-wins').textContent = wins;
+            document.getElementById('stat-winrate').textContent = `${wr}%`;
+            if (isOwnProfile) {
+                document.getElementById('profile-avatar-preview').src = resolveAvatar(targetProfile);
+            }
+        }
+
+        await loadMatchHistory(effectiveTargetId);
     }
+
+    window.viewPlayerProfile = function(userId) {
+        if (!userId) return;
+        openProfileModal(userId);
+    };
 
     async function loadMatchHistory(userId) {
         const list = document.getElementById('match-history-list');
@@ -2027,7 +2152,7 @@
         }
 
         if (!data || data.length === 0) {
-            list.innerHTML = '<p style="color: #aaa; text-align: center; padding: 15px;">У вас пока нет сыгранных матчей</p>';
+            list.innerHTML = '<p style="color: #aaa; text-align: center; padding: 15px;">Пока нет сыгранных матчей</p>';
             return;
         }
 
@@ -2355,6 +2480,14 @@
                         : {}
                 };
 
+                if (
+                    localSelectedCardId !== null &&
+                    !Array.isArray(gameState.selectedCards?.[localSelectedCardId]) ||
+                    (localSelectedCardId !== null && !gameState.selectedCards?.[localSelectedCardId]?.includes(currentUser.id))
+                ) {
+                    localSelectedCardId = null;
+                }
+
                 if (prevStatus === 'lobby' && updatedRoom.status === 'playing') {
                     enterGameScreen();
                 } else if (updatedRoom.status !== 'lobby') {
@@ -2452,7 +2585,7 @@
         }
 
         el.className = `message ${teamClass}`;
-        el.innerHTML = `<strong>${escapeHtml(msg.sender_name)}</strong><span class="chat-role-badge">${roleBadge}</span>: ${escapeHtml(msg.message)}`;
+        el.innerHTML = `<strong class="clickable-user" onclick="viewPlayerProfile('${msg.user_id}')" title="Открыть профиль">${escapeHtml(msg.sender_name)}</strong><span class="chat-role-badge">${roleBadge}</span>: ${escapeHtml(msg.message)}`;
         box.appendChild(el);
     }
 
@@ -2478,9 +2611,9 @@
             row.className = 'player-waiting';
             row.innerHTML = `
                 <div class="player-info">
-                    <img src="${resolveAvatar(prof)}" alt="Avatar">
+                    <img src="${resolveAvatar(prof)}" alt="Avatar" class="clickable-avatar" onclick="viewPlayerProfile('${p.user_id}')" title="Открыть профиль">
                     <div>
-                        <span style="font-weight: bold;">${escapeHtml(prof.username || 'Агент')}</span>
+                        <span class="clickable-user" style="font-weight: bold;" onclick="viewPlayerProfile('${p.user_id}')" title="Открыть профиль">${escapeHtml(prof.username || 'Агент')}</span>
                         <span class="elo-badge">${prof.elo || 1000} ELO</span>
                         ${isRoomOwner ? '<span style="color: #9b59b6; font-size: 0.78rem; margin-left: 6px;">(Создатель)</span>' : ''}
                     </div>
@@ -2526,6 +2659,7 @@
     }
 
     async function leaveRoomCompletely(removePlayerRow = true) {
+        isCommittingCard = false;
         clearPickConfirmTimer();
         await trackMySelectedCard(null);
         sessionStorage.removeItem(ACTIVE_ROOM_STORAGE_KEY);
@@ -2628,8 +2762,8 @@
             el.innerHTML = `
                 <div class="player-left">
                     <span class="player-color-dot" style="background-color: ${dotColor};" title="Цвет пика игрока"></span>
-                    <img src="${resolveAvatar(prof)}" alt="">
-                    <span>${escapeHtml(prof.username || 'Агент')}</span>
+                    <img src="${resolveAvatar(prof)}" alt="" class="clickable-avatar" onclick="viewPlayerProfile('${p.user_id}')" title="Открыть профиль">
+                    <span class="player-name-text clickable-user" onclick="viewPlayerProfile('${p.user_id}')" title="Открыть профиль">${escapeHtml(prof.username || 'Агент')}</span>
                 </div>
                 <span style="font-size: 0.7rem; color: var(--gold);">${prof.elo || 1000}</span>
             `;
@@ -2678,6 +2812,7 @@
     }
 
     async function toggleSkipTurnVote() {
+        if (isCommittingCard) return;
         const me = getMyPlayerRecord();
         if (!me || !currentUser || me.role !== 'agent' || me.team !== gameState.currentTeam || gameState.cardsBlocked || gameState.gameOver) {
             return;
@@ -2819,7 +2954,8 @@
         }
 
         const numericCardId = Number(readyCardId);
-        if (activeConfirmCardId === numericCardId && pickDelayTimer) {
+        // Не перезапускаем таймер, если эта карточка уже подтверждается
+        if (activeConfirmCardId === numericCardId && (pickDelayTimer || isCommittingCard)) {
             return;
         }
 
@@ -2843,21 +2979,40 @@
 
         pickDelayTimer = setTimeout(async () => {
             const targetId = activeConfirmCardId;
-            clearPickConfirmTimer();
-            if (targetId === null) return;
+            if (pickDelayRaf) {
+                cancelAnimationFrame(pickDelayRaf);
+                pickDelayRaf = null;
+            }
+            pickDelayTimer = null;
+            pickDelayStartTime = null;
+            if (targetId === null) {
+                activeConfirmCardId = null;
+                return;
+            }
 
             const latestVoters = (gameState.selectedCards || {})[targetId] || [];
             const stillAllReady = activeAgents.every(agent => latestVoters.includes(agent.user_id));
-            if (!stillAllReady) return;
+            if (!stillAllReady) {
+                activeConfirmCardId = null;
+                return;
+            }
 
             if (currentUser && latestVoters.includes(currentUser.id)) {
-                await selectCard(targetId);
+                isCommittingCard = true;
+                try {
+                    await selectCard(targetId);
+                } finally {
+                    isCommittingCard = false;
+                    activeConfirmCardId = null;
+                }
+            } else {
+                activeConfirmCardId = null;
             }
         }, PICK_CONFIRM_DELAY_MS);
     }
 
     async function togglePickCard(cardId) {
-        if (isSelectingCard || gameState.gameOver || currentRoom?.status !== 'playing' || gameState.cardsBlocked) {
+        if (isCommittingCard || gameState.gameOver || currentRoom?.status !== 'playing' || gameState.cardsBlocked) {
             return;
         }
         const me = getMyPlayerRecord();
@@ -2887,6 +3042,10 @@
             delete map[cardId];
         }
 
+        if (activeConfirmCardId === cardId && !currentList.includes(currentUser.id)) {
+            clearPickConfirmTimer();
+        }
+
         gameState.selectedCards = map;
         updateGameBoard();
         syncTeamPickConfirmation();
@@ -2901,6 +3060,7 @@
         const me = getMyPlayerRecord();
         const isMaster = me?.role === 'master';
         const canPickNow =
+            !isCommittingCard &&
             !gameState.gameOver &&
             currentRoom?.status === 'playing' &&
             me &&
@@ -2947,14 +3107,13 @@
 
             const canClick = canPickNow && !card.revealed;
             if (!canClick) cardEl.classList.add('disabled');
-            if (gameState.cardsBlocked && !card.revealed && !isMaster) cardEl.classList.add('blocked');
+            if ((gameState.cardsBlocked || isCommittingCard) && !card.revealed && !isMaster) cardEl.classList.add('blocked');
 
             const wordSpan = document.createElement('div');
             wordSpan.className = 'word';
             wordSpan.textContent = card.word;
             cardEl.appendChild(wordSpan);
 
-            // Цветные точки игроков, выбравших это слово
             const presenceHolders = !card.revealed ? (peerSelectedCards[card.id] || []) : [];
             const dotSources = voters.map(uid => {
                 const p = roomPlayers.find(rp => rp.user_id === uid);
@@ -2979,7 +3138,6 @@
                 cardEl.appendChild(dotsWrap);
             }
 
-            // Полоска задержки срабатывания (когда все агенты команды нажали на слово)
             if (!card.revealed && allAgentsPicked) {
                 const progressBar = document.createElement('div');
                 progressBar.className = 'card-pick-progress';
@@ -3092,54 +3250,47 @@
     }
 
     async function selectCard(cardId) {
-        if (isSelectingCard) return;
         const me = getMyPlayerRecord();
         if (!me || me.role !== 'agent' || me.team !== gameState.currentTeam || gameState.cardsBlocked || gameState.gameOver) return;
 
         const card = gameState.cards.find(c => c.id === cardId);
         if (!card || card.revealed) return;
 
-        isSelectingCard = true;
-        try {
-            card.revealed = true;
+        card.revealed = true;
 
-            if (gameState.selectedCards && gameState.selectedCards[cardId]) {
-                const nextSelected = { ...gameState.selectedCards };
-                delete nextSelected[cardId];
-                gameState.selectedCards = nextSelected;
-            }
-            if (localSelectedCardId === cardId) {
-                await trackMySelectedCard(null);
-            }
+        const nextSelected = { ...(gameState.selectedCards || {}) };
+        delete nextSelected[cardId];
+        gameState.selectedCards = nextSelected;
 
-            if (card.type === 'blue') {
-                gameState.blueScore++;
-                gameState.blueCardsRemaining--;
-                if (gameState.blueCardsRemaining === 0) {
-                    await finishMatch('blue');
-                    return;
-                }
-                if (gameState.currentTeam !== 'blue') switchTurnState();
-            } else if (card.type === 'red') {
-                gameState.redScore++;
-                gameState.redCardsRemaining--;
-                if (gameState.redCardsRemaining === 0) {
-                    await finishMatch('red');
-                    return;
-                }
-                if (gameState.currentTeam !== 'red') switchTurnState();
-            } else if (card.type === 'neutral') {
-                switchTurnState();
-            } else if (card.type === 'assassin') {
-                const winner = gameState.currentTeam === 'blue' ? 'red' : 'blue';
-                await finishMatch(winner);
+        if (localSelectedCardId === cardId) {
+            await trackMySelectedCard(null);
+        }
+
+        if (card.type === 'blue') {
+            gameState.blueScore++;
+            gameState.blueCardsRemaining--;
+            if (gameState.blueCardsRemaining === 0) {
+                await finishMatch('blue');
                 return;
             }
-
-            await pushGameState();
-        } finally {
-            isSelectingCard = false;
+            if (gameState.currentTeam !== 'blue') switchTurnState();
+        } else if (card.type === 'red') {
+            gameState.redScore++;
+            gameState.redCardsRemaining--;
+            if (gameState.redCardsRemaining === 0) {
+                await finishMatch('red');
+                return;
+            }
+            if (gameState.currentTeam !== 'red') switchTurnState();
+        } else if (card.type === 'neutral') {
+            switchTurnState();
+        } else if (card.type === 'assassin') {
+            const winner = gameState.currentTeam === 'blue' ? 'red' : 'blue';
+            await finishMatch(winner);
+            return;
         }
+
+        await pushGameState();
     }
 
     function switchTurnState() {
@@ -3249,6 +3400,7 @@
     }
 
     async function startNextRound() {
+        isCommittingCard = false;
         clearPickConfirmTimer();
         await trackMySelectedCard(null);
         const nextNum = (gameState.gameNumber || 1) + 1;
@@ -3489,8 +3641,8 @@
             showAuthFormUI();
         };
 
-        document.getElementById('open-profile-btn').onclick = openProfileModal;
-        document.getElementById('header-profile-btn').onclick = openProfileModal;
+        document.getElementById('open-profile-btn').onclick = () => openProfileModal(currentUser?.id);
+        document.getElementById('header-profile-btn').onclick = () => openProfileModal(currentUser?.id);
         document.getElementById('close-profile-btn').onclick = () => {
             document.getElementById('profile-modal').style.display = 'none';
         };
