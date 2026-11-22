@@ -202,7 +202,7 @@
             border-radius: 7px;
             font-weight: bold;
             cursor: pointer;
-            transition: transform 0.15s ease, box-shadow 0.2s ease;
+            transition: transform 0.15s ease, box-shadow 0.2s ease, background-color 0.2s ease;
             padding: 6px;
             user-select: none;
             -webkit-user-select: none;
@@ -219,40 +219,65 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.35);
         }
 
-        .card.holding {
-            transform: scale(0.96);
-            box-shadow: 0 0 0 2px var(--gold);
+        .card.picked-by-me {
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 6px 16px rgba(0, 0, 0, 0.35);
+            transform: translateY(-2px);
         }
 
-        .card.peer-holding {
-            box-shadow: 0 0 0 2px rgba(241, 196, 15, 0.85);
+        .card.confirming-pick {
+            box-shadow: 0 0 0 2px var(--gold), 0 8px 20px rgba(241, 196, 15, 0.25);
         }
 
-        .card-hold-progress {
+        /* Цветной предпросмотр у мастера, когда слово выбрано агентами */
+        .card.master-picked-preview.blue {
+            background: rgba(52, 152, 219, 0.45) !important;
+            border-color: rgba(52, 152, 219, 0.9) !important;
+        }
+
+        .card.master-picked-preview.red {
+            background: rgba(231, 76, 60, 0.45) !important;
+            border-color: rgba(231, 76, 60, 0.9) !important;
+        }
+
+        .card.master-picked-preview.neutral {
+            background: rgba(185, 162, 136, 0.62) !important;
+            border-color: rgba(215, 195, 170, 0.95) !important;
+            color: #222 !important;
+        }
+
+        .card.master-picked-preview.assassin {
+            background: rgba(125, 42, 42, 0.72) !important;
+            border-color: rgba(231, 76, 60, 0.95) !important;
+        }
+
+        .card-pick-dots {
             position: absolute;
-            left: 0;
-            bottom: 0;
-            height: 5px;
-            width: 0%;
-            background: linear-gradient(90deg, var(--gold), #2ecc71);
+            right: 7px;
+            bottom: 9px;
+            display: flex;
+            gap: 5px;
+            align-items: center;
             z-index: 4;
             pointer-events: none;
         }
 
-        .card-holder-tag {
+        .card-pick-dot {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            border: 1.5px solid rgba(255, 255, 255, 0.85);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+            flex-shrink: 0;
+        }
+
+        .card-pick-progress {
             position: absolute;
-            top: 3px;
-            left: 4px;
-            right: 4px;
-            font-size: 0.62rem;
-            background: rgba(0, 0, 0, 0.68);
-            color: var(--gold);
-            padding: 1px 4px;
-            border-radius: 4px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            z-index: 4;
+            left: 0;
+            bottom: 0;
+            height: 4px;
+            width: 0%;
+            background: #ff5e57;
+            z-index: 5;
             pointer-events: none;
         }
 
@@ -411,6 +436,14 @@
             object-fit: cover;
             background: #162447;
             flex-shrink: 0;
+        }
+
+        .player-color-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            border: 1px solid rgba(255, 255, 255, 0.75);
         }
 
         .player.master::after {
@@ -1427,7 +1460,7 @@
                 <div class="timer" id="timer">--:--</div>
                 <div id="turn-indicator" class="status-message blue">Ход синей команды</div>
                 <div id="hold-hint-banner" style="text-align: center; font-size: 0.78rem; color: #aaa; margin-bottom: 6px; display: none;">
-                    <i class="fas fa-hand-pointer"></i> Зажмите и удерживайте карточку, чтобы открыть слово
+                    <i class="fas fa-mouse-pointer"></i> Нажмите на слово для выбора (повторный клик — отжать)
                 </div>
 
                 <div class="cards-grid" id="cards-container"></div>
@@ -1554,7 +1587,7 @@
         <div style="line-height: 1.65; color: #ddd; font-size: 0.94rem;">
             <p><strong>Цель:</strong> Первыми открыть всех агентов своего цвета на поле 5×5.</p>
             <p><strong>Шпион-мастер (👑):</strong> Видит цвета всех карточек и даёт <strong>ровно одну подсказку за ход</strong> из <em>одного слова</em> и <em>числа</em>.</p>
-            <p><strong>Выбор слова (защита от миссклика):</strong> Чтобы открыть карточку, <strong>нажмите и удерживайте</strong> её до заполнения шкалы. Если отпустить раньше — выбор отменится.</p>
+            <p><strong>Выбор слова:</strong> Нажмите на слово, чтобы выбрать его (повторный клик отжимает выбор). Если в команде несколько игроков — слово сработает, когда его выберут все агенты команды, после чего пройдёт задержка подтверждения.</p>
             <p><strong>Завершение хода:</strong> Угадывающие могут досрочно передать ход соперникам голосованием большинства.</p>
             <p><strong>Чат:</strong> В чате общаются все участники комнаты (игроки и наблюдатели), без системного спама.</p>
         </div>
@@ -1586,7 +1619,11 @@
     });
 
     const TURN_SECONDS = 90;
-    const HOLD_DURATION_MS = 650;
+    const PICK_CONFIRM_DELAY_MS = 1200;
+    const PLAYER_DOT_COLORS = [
+        '#e85cf8', '#00d2d3', '#feca57', '#1dd1a1',
+        '#ff9f43', '#54a0ff', '#ff6b6b', '#a29bfe'
+    ];
 
     let isRestoringSession = false;
 
@@ -1609,7 +1646,6 @@
         }
     }
 
-    // Скрываем стартовое лобби до завершения проверки сессии и комнаты, чтобы не мелькало при F5
     if (hasStoredAuthSession() && hasSavedRoomCode()) {
         document.documentElement.insertAdjacentHTML(
             'beforeend',
@@ -1620,6 +1656,15 @@
     function removeBootHideStyle() {
         const el = document.getElementById('boot-hide-lobby');
         if (el) el.remove();
+    }
+
+    function getPlayerDotColor(userId) {
+        if (!userId) return '#e85cf8';
+        let hash = 0;
+        for (let i = 0; i < userId.length; i++) {
+            hash = (hash * 31 + userId.charCodeAt(i)) >>> 0;
+        }
+        return PLAYER_DOT_COLORS[hash % PLAYER_DOT_COLORS.length];
     }
 
     function makeDefaultAvatarDataUrl(name) {
@@ -1772,10 +1817,12 @@
     let currentRoom = null;
     let roomPlayers = [];
     let roomChannel = null;
-    let peerCardHolds = {};
-    let activeHoldTimer = null;
-    let activeHoldRaf = null;
-    let activeHoldCardId = null;
+    let peerSelectedCards = {};
+    let localSelectedCardId = null;
+    let pickDelayTimer = null;
+    let pickDelayStartTime = null;
+    let pickDelayRaf = null;
+    let activeConfirmCardId = null;
     let isSelectingCard = false;
 
     let gameState = {
@@ -1789,6 +1836,7 @@
         hintGivenOnTurn: false,
         teamsLocked: false,
         skipVotes: [],
+        selectedCards: {},
         gameOver: false,
         winner: null,
         timeLeft: TURN_SECONDS,
@@ -2042,6 +2090,7 @@
             hintGivenOnTurn: false,
             teamsLocked: Boolean(teamsLocked),
             skipVotes: [],
+            selectedCards: {},
             gameOver: false,
             winner: null,
             timeLeft: TURN_SECONDS,
@@ -2151,7 +2200,10 @@
             ...room.game_state,
             hintGivenOnTurn: Boolean(room.game_state?.hintGivenOnTurn ?? room.game_state?.currentHint),
             teamsLocked: Boolean(room.game_state?.teamsLocked),
-            skipVotes: Array.isArray(room.game_state?.skipVotes) ? room.game_state.skipVotes : []
+            skipVotes: Array.isArray(room.game_state?.skipVotes) ? room.game_state.skipVotes : [],
+            selectedCards: (room.game_state?.selectedCards && typeof room.game_state.selectedCards === 'object')
+                ? room.game_state.selectedCards
+                : {}
         };
 
         if (room.status === 'lobby') {
@@ -2267,19 +2319,20 @@
             })
             .on('presence', { event: 'sync' }, () => {
                 const state = roomChannel.presenceState();
-                const holdsMap = {};
+                const map = {};
                 Object.entries(state).forEach(([userId, metas]) => {
                     const latest = metas[metas.length - 1];
-                    if (latest && latest.holdingCardId !== null && latest.holdingCardId !== undefined) {
-                        const cid = latest.holdingCardId;
-                        if (!holdsMap[cid]) holdsMap[cid] = [];
-                        holdsMap[cid].push({
+                    if (latest && latest.selectedCardId !== null && latest.selectedCardId !== undefined) {
+                        const cid = latest.selectedCardId;
+                        if (!map[cid]) map[cid] = [];
+                        map[cid].push({
                             userId,
-                            username: latest.username || 'Игрок'
+                            username: latest.username || 'Игрок',
+                            color: latest.color || getPlayerDotColor(userId)
                         });
                     }
                 });
-                peerCardHolds = holdsMap;
+                peerSelectedCards = map;
                 updateGameBoard();
             })
             .on('postgres_changes', {
@@ -2296,7 +2349,10 @@
                     ...updatedRoom.game_state,
                     hintGivenOnTurn: Boolean(updatedRoom.game_state?.hintGivenOnTurn ?? updatedRoom.game_state?.currentHint),
                     teamsLocked: Boolean(updatedRoom.game_state?.teamsLocked),
-                    skipVotes: Array.isArray(updatedRoom.game_state?.skipVotes) ? updatedRoom.game_state.skipVotes : []
+                    skipVotes: Array.isArray(updatedRoom.game_state?.skipVotes) ? updatedRoom.game_state.skipVotes : [],
+                    selectedCards: (updatedRoom.game_state?.selectedCards && typeof updatedRoom.game_state.selectedCards === 'object')
+                        ? updatedRoom.game_state.selectedCards
+                        : {}
                 };
 
                 if (prevStatus === 'lobby' && updatedRoom.status === 'playing') {
@@ -2337,18 +2393,21 @@
                 if (status === 'SUBSCRIBED') {
                     await roomChannel.track({
                         username: currentProfile?.username || 'Агент',
-                        holdingCardId: null
+                        color: getPlayerDotColor(currentUser.id),
+                        selectedCardId: localSelectedCardId
                     });
                 }
             });
     }
 
-    async function trackHoldingCard(cardId) {
-        if (!roomChannel) return;
+    async function trackMySelectedCard(cardId) {
+        localSelectedCardId = cardId;
+        if (!roomChannel || !currentUser) return;
         try {
             await roomChannel.track({
                 username: currentProfile?.username || 'Агент',
-                holdingCardId: cardId
+                color: getPlayerDotColor(currentUser.id),
+                selectedCardId: cardId
             });
         } catch (_) {}
     }
@@ -2445,6 +2504,7 @@
         gameState.hintGivenOnTurn = false;
         gameState.currentHint = null;
         gameState.skipVotes = [];
+        gameState.selectedCards = {};
 
         await sb
             .from('rooms')
@@ -2452,8 +2512,22 @@
             .eq('code', currentRoom.code);
     }
 
+    function clearPickConfirmTimer() {
+        if (pickDelayTimer) {
+            clearTimeout(pickDelayTimer);
+            pickDelayTimer = null;
+        }
+        if (pickDelayRaf) {
+            cancelAnimationFrame(pickDelayRaf);
+            pickDelayRaf = null;
+        }
+        pickDelayStartTime = null;
+        activeConfirmCardId = null;
+    }
+
     async function leaveRoomCompletely(removePlayerRow = true) {
-        cancelCardHold();
+        clearPickConfirmTimer();
+        await trackMySelectedCard(null);
         sessionStorage.removeItem(ACTIVE_ROOM_STORAGE_KEY);
         if (removePlayerRow && currentRoom && currentUser) {
             await sb.from('room_players').delete().eq('room_code', currentRoom.code).eq('user_id', currentUser.id);
@@ -2464,7 +2538,7 @@
         }
         currentRoom = null;
         roomPlayers = [];
-        peerCardHolds = {};
+        peerSelectedCards = {};
         document.getElementById('game-container').style.display = 'none';
         document.getElementById('winner-celebration').classList.remove('active');
         document.getElementById('game-paused-overlay').classList.remove('active');
@@ -2548,10 +2622,12 @@
         roomPlayers.forEach(p => {
             if (!p.team) return;
             const prof = p.profiles || {};
+            const dotColor = getPlayerDotColor(p.user_id);
             const el = document.createElement('div');
             el.className = `player ${p.role === 'master' ? 'master' : ''} ${p.user_id === currentUser?.id ? 'me' : ''}`;
             el.innerHTML = `
                 <div class="player-left">
+                    <span class="player-color-dot" style="background-color: ${dotColor};" title="Цвет пика игрока"></span>
                     <img src="${resolveAvatar(prof)}" alt="">
                     <span>${escapeHtml(prof.username || 'Агент')}</span>
                 </div>
@@ -2621,7 +2697,7 @@
 
         const neededVotes = Math.floor(activeAgents.length / 2) + 1;
         if (votes.length >= neededVotes) {
-            cancelCardHold();
+            clearPickConfirmTimer();
             switchTurnState();
         } else {
             gameState.skipVotes = votes;
@@ -2716,53 +2792,105 @@
         updateMyRoleControls();
     }
 
-    function startCardHold(cardId, cardEl) {
-        if (isSelectingCard) return;
-        cancelCardHold();
+    function syncTeamPickConfirmation() {
+        const selectedMap = gameState.selectedCards || {};
+        const activeAgents = getActiveTeamAgents();
 
-        activeHoldCardId = cardId;
-        cardEl.classList.add('holding');
-        const bar = cardEl.querySelector('.card-hold-progress');
-        const startTime = performance.now();
-
-        trackHoldingCard(cardId);
-
-        function step(now) {
-            if (activeHoldCardId !== cardId) return;
-            const elapsed = now - startTime;
-            const pct = Math.min(100, (elapsed / HOLD_DURATION_MS) * 100);
-            if (bar) bar.style.width = `${pct}%`;
-
-            if (elapsed >= HOLD_DURATION_MS) {
-                const targetId = activeHoldCardId;
-                cancelCardHold();
-                selectCard(targetId);
-                return;
-            }
-            activeHoldRaf = requestAnimationFrame(step);
+        if (
+            gameState.gameOver ||
+            currentRoom?.status !== 'playing' ||
+            gameState.cardsBlocked ||
+            activeAgents.length === 0
+        ) {
+            clearPickConfirmTimer();
+            return;
         }
 
-        activeHoldRaf = requestAnimationFrame(step);
+        const readyCardId = Object.keys(selectedMap).find((cidStr) => {
+            const voters = selectedMap[cidStr] || [];
+            const card = gameState.cards.find(c => String(c.id) === String(cidStr));
+            if (!card || card.revealed) return false;
+            return activeAgents.every(agent => voters.includes(agent.user_id));
+        });
+
+        if (readyCardId === undefined) {
+            clearPickConfirmTimer();
+            return;
+        }
+
+        const numericCardId = Number(readyCardId);
+        if (activeConfirmCardId === numericCardId && pickDelayTimer) {
+            return;
+        }
+
+        clearPickConfirmTimer();
+        activeConfirmCardId = numericCardId;
+        pickDelayStartTime = performance.now();
+
+        const cardEl = document.querySelector(`.card[data-card-id="${numericCardId}"]`);
+        if (cardEl) cardEl.classList.add('confirming-pick');
+
+        const animateBar = (now) => {
+            if (activeConfirmCardId !== numericCardId || !pickDelayStartTime) return;
+            const pct = Math.min(100, ((now - pickDelayStartTime) / PICK_CONFIRM_DELAY_MS) * 100);
+            const bar = document.querySelector(`.card[data-card-id="${numericCardId}"] .card-pick-progress`);
+            if (bar) bar.style.width = `${pct}%`;
+            if (pct < 100) {
+                pickDelayRaf = requestAnimationFrame(animateBar);
+            }
+        };
+        pickDelayRaf = requestAnimationFrame(animateBar);
+
+        pickDelayTimer = setTimeout(async () => {
+            const targetId = activeConfirmCardId;
+            clearPickConfirmTimer();
+            if (targetId === null) return;
+
+            const latestVoters = (gameState.selectedCards || {})[targetId] || [];
+            const stillAllReady = activeAgents.every(agent => latestVoters.includes(agent.user_id));
+            if (!stillAllReady) return;
+
+            if (currentUser && latestVoters.includes(currentUser.id)) {
+                await selectCard(targetId);
+            }
+        }, PICK_CONFIRM_DELAY_MS);
     }
 
-    function cancelCardHold() {
-        if (activeHoldRaf) {
-            cancelAnimationFrame(activeHoldRaf);
-            activeHoldRaf = null;
+    async function togglePickCard(cardId) {
+        if (isSelectingCard || gameState.gameOver || currentRoom?.status !== 'playing' || gameState.cardsBlocked) {
+            return;
         }
-        if (activeHoldTimer) {
-            clearTimeout(activeHoldTimer);
-            activeHoldTimer = null;
+        const me = getMyPlayerRecord();
+        if (!me || me.team !== gameState.currentTeam || me.role !== 'agent') {
+            return;
         }
-        if (activeHoldCardId !== null) {
-            activeHoldCardId = null;
-            trackHoldingCard(null);
-            document.querySelectorAll('.card.holding').forEach(el => {
-                el.classList.remove('holding');
-                const bar = el.querySelector('.card-hold-progress');
-                if (bar) bar.style.width = '0%';
-            });
+        const card = gameState.cards.find(c => c.id === cardId);
+        if (!card || card.revealed) return;
+
+        const map = { ...(gameState.selectedCards || {}) };
+        const currentList = Array.isArray(map[cardId]) ? [...map[cardId]] : [];
+        const idx = currentList.indexOf(currentUser.id);
+
+        if (idx >= 0) {
+            currentList.splice(idx, 1);
+            if (localSelectedCardId === cardId) {
+                await trackMySelectedCard(null);
+            }
+        } else {
+            currentList.push(currentUser.id);
+            await trackMySelectedCard(cardId);
         }
+
+        if (currentList.length > 0) {
+            map[cardId] = currentList;
+        } else {
+            delete map[cardId];
+        }
+
+        gameState.selectedCards = map;
+        updateGameBoard();
+        syncTeamPickConfirmation();
+        await pushGameState();
     }
 
     function updateGameBoard() {
@@ -2772,7 +2900,7 @@
 
         const me = getMyPlayerRecord();
         const isMaster = me?.role === 'master';
-        const canGuessNow =
+        const canPickNow =
             !gameState.gameOver &&
             currentRoom?.status === 'playing' &&
             me &&
@@ -2782,56 +2910,96 @@
 
         const holdBanner = document.getElementById('hold-hint-banner');
         if (holdBanner) {
-            holdBanner.style.display = canGuessNow ? 'block' : 'none';
+            holdBanner.style.display = canPickNow ? 'block' : 'none';
+            holdBanner.innerHTML = '<i class="fas fa-mouse-pointer"></i> Нажмите на слово для выбора (повторный клик — отжать). В команде из нескольких игроков слово сработает, когда на него нажмут все.';
         }
 
+        const selectedMap = gameState.selectedCards || {};
+        const activeAgents = getActiveTeamAgents();
+
         gameState.cards.forEach(card => {
+            const voters = Array.isArray(selectedMap[card.id]) ? selectedMap[card.id] : [];
+            const hasAnyPick = !card.revealed && voters.length > 0;
+            const allAgentsPicked =
+                hasAnyPick &&
+                activeAgents.length > 0 &&
+                activeAgents.every(a => voters.includes(a.user_id));
+
             const cardEl = document.createElement('div');
-            if (isMaster && !card.revealed) {
-                cardEl.className = `card ${card.type} master-view`;
+            cardEl.dataset.cardId = card.id;
+
+            if (card.revealed) {
+                cardEl.className = `card ${card.type} selected`;
+            } else if (isMaster) {
+                cardEl.className = `card ${card.type} master-view` + (hasAnyPick ? ' master-picked-preview' : '');
             } else {
-                cardEl.className = `card ${card.revealed ? card.type : 'word'}`;
+                cardEl.className = 'card word';
             }
 
-            if (card.revealed) cardEl.classList.add('selected');
+            const iPickedThis = Boolean(currentUser && voters.includes(currentUser.id));
+            if (iPickedThis && !card.revealed) {
+                cardEl.classList.add('picked-by-me');
+            }
 
-            const canClick = canGuessNow && !card.revealed;
+            if (!card.revealed && allAgentsPicked) {
+                cardEl.classList.add('confirming-pick');
+            }
 
+            const canClick = canPickNow && !card.revealed;
             if (!canClick) cardEl.classList.add('disabled');
             if (gameState.cardsBlocked && !card.revealed && !isMaster) cardEl.classList.add('blocked');
-
-            const holders = peerCardHolds[card.id] || [];
-            if (!card.revealed && holders.length > 0) {
-                cardEl.classList.add('peer-holding');
-                const tag = document.createElement('div');
-                tag.className = 'card-holder-tag';
-                tag.textContent = '👆 ' + holders.map(h => h.username).join(', ');
-                cardEl.appendChild(tag);
-            }
 
             const wordSpan = document.createElement('div');
             wordSpan.className = 'word';
             wordSpan.textContent = card.word;
             cardEl.appendChild(wordSpan);
 
-            if (canClick) {
-                const progressBar = document.createElement('div');
-                progressBar.className = 'card-hold-progress';
-                cardEl.appendChild(progressBar);
+            // Цветные точки игроков, выбравших это слово
+            const presenceHolders = !card.revealed ? (peerSelectedCards[card.id] || []) : [];
+            const dotSources = voters.map(uid => {
+                const p = roomPlayers.find(rp => rp.user_id === uid);
+                const pres = presenceHolders.find(ph => ph.userId === uid);
+                return {
+                    userId: uid,
+                    name: p?.profiles?.username || pres?.username || 'Игрок',
+                    color: pres?.color || getPlayerDotColor(uid)
+                };
+            });
 
-                cardEl.addEventListener('pointerdown', (e) => {
-                    if (e.button !== undefined && e.button !== 0) return;
-                    e.preventDefault();
-                    startCardHold(card.id, cardEl);
+            if (!card.revealed && dotSources.length > 0) {
+                const dotsWrap = document.createElement('div');
+                dotsWrap.className = 'card-pick-dots';
+                dotSources.forEach(d => {
+                    const dot = document.createElement('span');
+                    dot.className = 'card-pick-dot';
+                    dot.style.backgroundColor = d.color;
+                    dot.title = d.name;
+                    dotsWrap.appendChild(dot);
                 });
-                cardEl.addEventListener('pointerup', cancelCardHold);
-                cardEl.addEventListener('pointerleave', cancelCardHold);
-                cardEl.addEventListener('pointercancel', cancelCardHold);
-                cardEl.addEventListener('contextmenu', (e) => e.preventDefault());
+                cardEl.appendChild(dotsWrap);
+            }
+
+            // Полоска задержки срабатывания (когда все агенты команды нажали на слово)
+            if (!card.revealed && allAgentsPicked) {
+                const progressBar = document.createElement('div');
+                progressBar.className = 'card-pick-progress';
+                if (activeConfirmCardId === card.id && pickDelayStartTime) {
+                    const pct = Math.min(100, ((performance.now() - pickDelayStartTime) / PICK_CONFIRM_DELAY_MS) * 100);
+                    progressBar.style.width = `${pct}%`;
+                }
+                cardEl.appendChild(progressBar);
+            }
+
+            if (canClick) {
+                cardEl.addEventListener('click', () => {
+                    togglePickCard(card.id);
+                });
             }
 
             container.appendChild(cardEl);
         });
+
+        syncTeamPickConfirmation();
     }
 
     function updateScoreUI() {
@@ -2904,6 +3072,7 @@
         gameState.hintGivenOnTurn = true;
         gameState.cardsBlocked = false;
         gameState.skipVotes = [];
+        gameState.selectedCards = {};
         gameState.timeLeft = TURN_SECONDS;
         gameState.timerRunning = true;
         gameState.hintsHistory.push({
@@ -2916,6 +3085,8 @@
         document.getElementById('hint-word').value = '';
         document.getElementById('hint-number').value = '';
 
+        clearPickConfirmTimer();
+        await trackMySelectedCard(null);
         updateMyRoleControls();
         await pushGameState();
     }
@@ -2931,6 +3102,15 @@
         isSelectingCard = true;
         try {
             card.revealed = true;
+
+            if (gameState.selectedCards && gameState.selectedCards[cardId]) {
+                const nextSelected = { ...gameState.selectedCards };
+                delete nextSelected[cardId];
+                gameState.selectedCards = nextSelected;
+            }
+            if (localSelectedCardId === cardId) {
+                await trackMySelectedCard(null);
+            }
 
             if (card.type === 'blue') {
                 gameState.blueScore++;
@@ -2963,20 +3143,26 @@
     }
 
     function switchTurnState() {
+        clearPickConfirmTimer();
+        trackMySelectedCard(null);
         gameState.currentTeam = gameState.currentTeam === 'blue' ? 'red' : 'blue';
         gameState.cardsBlocked = true;
         gameState.currentHint = null;
         gameState.hintGivenOnTurn = false;
         gameState.skipVotes = [];
+        gameState.selectedCards = {};
         gameState.timerRunning = true;
         gameState.timeLeft = TURN_SECONDS;
     }
 
     async function finishMatch(winningTeam) {
+        clearPickConfirmTimer();
+        await trackMySelectedCard(null);
         gameState.gameOver = true;
         gameState.winner = winningTeam;
         gameState.timerRunning = false;
         gameState.skipVotes = [];
+        gameState.selectedCards = {};
         gameState.cards.forEach(c => c.revealed = true);
 
         if (!gameState.eloSettled) {
@@ -3063,6 +3249,8 @@
     }
 
     async function startNextRound() {
+        clearPickConfirmTimer();
+        await trackMySelectedCard(null);
         const nextNum = (gameState.gameNumber || 1) + 1;
         gameState = buildInitialGameState(nextNum, gameState.teamsLocked);
 
@@ -3356,9 +3544,6 @@
         document.getElementById('reset-game-btn').onclick = () => {
             if (confirm('Сгенерировать новое поле для текущего раунда?')) startNextRound();
         };
-
-        window.addEventListener('pointerup', cancelCardHold);
-        window.addEventListener('blur', cancelCardHold);
     });
 </script>
 </body>
