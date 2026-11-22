@@ -211,6 +211,7 @@
             grid-template-columns: repeat(5, 1fr);
             gap: 8px;
             margin-top: 10px;
+            contain: layout style;
         }
 
         .card {
@@ -223,7 +224,7 @@
             border-radius: 7px;
             font-weight: bold;
             cursor: pointer;
-            transition: transform 0.15s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+            transition: transform 0.14s ease, box-shadow 0.16s ease, filter 0.16s ease, background-color 0.16s ease;
             padding: 6px;
             user-select: none;
             -webkit-user-select: none;
@@ -233,6 +234,7 @@
             position: relative;
             overflow: hidden;
             min-height: 58px;
+            will-change: transform;
         }
 
         .card:hover:not(.disabled):not(.blocked) {
@@ -241,33 +243,33 @@
         }
 
         .card.picked-by-me {
-            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 6px 16px rgba(0, 0, 0, 0.35);
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.95), 0 6px 16px rgba(0, 0, 0, 0.4);
             transform: translateY(-2px);
         }
 
         .card.confirming-pick {
-            box-shadow: 0 0 0 2px var(--gold), 0 8px 20px rgba(241, 196, 15, 0.25);
+            box-shadow: 0 0 0 2px var(--gold), 0 8px 20px rgba(241, 196, 15, 0.3);
         }
 
-        .card.master-picked-preview.blue {
-            background: rgba(52, 152, 219, 0.45) !important;
-            border-color: rgba(52, 152, 219, 0.9) !important;
+        /* Затемнение пикнутых слов на поле шпион-мастера */
+        .card.master-view.master-picked-preview {
+            filter: brightness(0.52) contrast(1.08);
+            box-shadow: inset 0 0 0 2px var(--gold), 0 4px 12px rgba(0, 0, 0, 0.65);
         }
 
-        .card.master-picked-preview.red {
-            background: rgba(231, 76, 60, 0.45) !important;
-            border-color: rgba(231, 76, 60, 0.9) !important;
-        }
-
-        .card.master-picked-preview.neutral {
-            background: rgba(185, 162, 136, 0.62) !important;
-            border-color: rgba(215, 195, 170, 0.95) !important;
-            color: #222 !important;
-        }
-
-        .card.master-picked-preview.assassin {
-            background: rgba(125, 42, 42, 0.72) !important;
-            border-color: rgba(231, 76, 60, 0.95) !important;
+        .card.master-view.master-picked-preview::after {
+            content: "👁 ПИК";
+            position: absolute;
+            top: 5px;
+            left: 6px;
+            font-size: 0.62rem;
+            letter-spacing: 0.5px;
+            background: rgba(0, 0, 0, 0.72);
+            color: var(--gold);
+            padding: 1px 5px;
+            border-radius: 4px;
+            z-index: 4;
+            pointer-events: none;
         }
 
         .card-pick-dots {
@@ -435,6 +437,25 @@
             gap: 4px;
         }
 
+        .player-right {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-shrink: 0;
+        }
+
+        .kick-mini-btn {
+            background: rgba(231, 76, 60, 0.85);
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 2px 5px;
+            font-size: 0.68rem;
+            width: auto;
+            cursor: pointer;
+            line-height: 1.1;
+        }
+
         .player-left {
             display: flex;
             align-items: center;
@@ -542,7 +563,7 @@
             color: white;
         }
 
-        input, select {
+        input, select, textarea {
             padding: 11px;
             border-radius: 8px;
             border: 2px solid var(--blue-team);
@@ -553,13 +574,13 @@
             transition: all 0.2s ease;
         }
 
-        input:focus {
+        input:focus, textarea:focus {
             outline: none;
             border-color: #8f94fb;
             background-color: rgba(255, 255, 255, 0.18);
         }
 
-        input::placeholder {
+        input::placeholder, textarea::placeholder {
             color: #aaa;
         }
 
@@ -774,7 +795,7 @@
             overflow-y: auto;
         }
 
-        #profile-modal {
+        #profile-modal, #words-modal {
             z-index: 220;
         }
 
@@ -1133,7 +1154,7 @@
             background: linear-gradient(135deg, var(--panel-bg), #1a335a);
             border-radius: 10px;
             padding: 15px;
-            min-width: 260px;
+            min-width: 265px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
             border: 1px solid rgba(143, 148, 251, 0.35);
             display: none;
@@ -1210,72 +1231,27 @@
             border-top: 1px solid rgba(143, 148, 251, 0.3);
         }
 
-        /* МОБИЛЬНАЯ АДАПТАЦИЯ */
         @media (max-width: 768px) {
-            .container {
-                padding: 8px;
-            }
-            header {
-                margin-bottom: 10px;
-                padding-bottom: 8px;
-            }
-            .header-actions {
-                position: static;
-                width: 100%;
-                justify-content: center;
-            }
-            .game-board {
-                padding: 8px;
-            }
-            .cards-grid {
-                grid-template-columns: repeat(3, 1fr);
-                gap: 6px;
-            }
-            .card {
-                aspect-ratio: auto;
-                min-height: 54px;
-                padding: 5px 4px;
-            }
-            .card .word {
-                font-size: 0.78rem;
-            }
-            .player-panel {
-                padding: 11px;
-            }
-            .chat-panel {
-                min-height: 290px;
-            }
-            .chat-messages {
-                max-height: 250px;
-                min-height: 160px;
-            }
-            .modal-content, .lobby-container {
-                padding: 16px 14px;
-                border-radius: 12px;
-            }
-            .profile-header-bar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .profile-actions {
-                justify-content: stretch;
-            }
-            .profile-actions button {
-                flex: 1;
-            }
+            .container { padding: 8px; }
+            header { margin-bottom: 10px; padding-bottom: 8px; }
+            .header-actions { position: static; width: 100%; justify-content: center; }
+            .game-board { padding: 8px; }
+            .cards-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+            .card { aspect-ratio: auto; min-height: 54px; padding: 5px 4px; }
+            .card .word { font-size: 0.78rem; }
+            .player-panel { padding: 11px; }
+            .chat-panel { min-height: 290px; }
+            .chat-messages { max-height: 250px; min-height: 160px; }
+            .modal-content, .lobby-container { padding: 16px 14px; border-radius: 12px; }
+            .profile-header-bar { flex-direction: column; align-items: stretch; }
+            .profile-actions { justify-content: stretch; }
+            .profile-actions button { flex: 1; }
         }
 
         @media (max-width: 400px) {
-            .cards-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 6px;
-            }
-            .card .word {
-                font-size: 0.82rem;
-            }
-            .team {
-                padding: 8px 6px;
-            }
+            .cards-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+            .card .word { font-size: 0.82rem; }
+            .team { padding: 8px 6px; }
         }
     </style>
 </head>
@@ -1411,7 +1387,7 @@
     </div>
 </div>
 
-<!-- МОДАЛЬНОЕ ОКНО: ПРОФИЛЬ (СВОЙ ИЛИ ЧУЖОЙ) -->
+<!-- МОДАЛЬНОЕ ОКНО: ПРОФИЛЬ -->
 <div class="modal-overlay" id="profile-modal" style="display: none;">
     <div class="modal-content">
         <button class="close-modal-btn" id="close-profile-btn">&times;</button>
@@ -1472,6 +1448,31 @@
     </div>
 </div>
 
+<!-- МОДАЛЬНОЕ ОКНО: ИМПОРТ СЛОВ -->
+<div class="modal-overlay" id="words-modal" style="display: none;">
+    <div class="modal-content">
+        <button class="close-modal-btn" id="close-words-btn">&times;</button>
+        <h2><i class="fas fa-file-import"></i> Импорт словаря слов</h2>
+        <p style="color: #ccc; font-size: 0.88rem; margin-bottom: 10px;">
+            Вставьте слова через запятую, пробел или с новой строки, либо загрузите <strong>.txt / .csv</strong> файл. Сейчас в словаре: <strong id="words-total-count">0</strong> слов.
+        </p>
+        <textarea id="import-words-textarea" rows="5" placeholder="Например: МАЯК, КОМПАС, ШТОРМ, ЯКОРЬ..."></textarea>
+        <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; align-items: center;">
+            <label for="import-words-file" class="file-upload-label">
+                <i class="fas fa-file-upload"></i> Загрузить .txt / .csv
+            </label>
+            <input type="file" id="import-words-file" accept=".txt,.csv,text/plain" style="display: none;">
+            <button type="button" class="join-btn btn-sm" id="apply-import-words-btn">
+                <i class="fas fa-check"></i> Добавить слова
+            </button>
+            <button type="button" class="leave-btn btn-sm" id="reset-custom-words-btn">
+                Сбросить свой словарь
+            </button>
+        </div>
+        <div class="error-text" id="import-words-status" style="color: var(--green);"></div>
+    </div>
+</div>
+
 <!-- ОСНОВНОЙ КОНТЕЙНЕР ИГРЫ -->
 <div class="container" id="game-container" style="display: none;">
     <header>
@@ -1515,9 +1516,7 @@
 
                 <div class="timer" id="timer">--:--</div>
                 <div id="turn-indicator" class="status-message blue">Ход синей команды</div>
-                <div id="hold-hint-banner" style="text-align: center; font-size: 0.78rem; color: #aaa; margin-bottom: 6px; display: none;">
-                    <i class="fas fa-mouse-pointer"></i> Нажмите на слово для выбора (повторный клик — отжать)
-                </div>
+                <div id="hold-hint-banner" style="text-align: center; font-size: 0.78rem; color: #aaa; margin-bottom: 6px; display: none;"></div>
 
                 <div class="cards-grid" id="cards-container"></div>
             </section>
@@ -1609,7 +1608,10 @@
                     <span id="lock-teams-text">Закрыть команды</span>
                 </button>
                 <button class="admin-btn" id="shuffle-teams-btn">
-                    <i class="fas fa-random"></i> Перемешать команды
+                    <i class="fas fa-random"></i> Перемешать (1 мастер/ком.)
+                </button>
+                <button class="admin-btn" id="open-import-words-btn">
+                    <i class="fas fa-file-import"></i> Импорт слов
                 </button>
                 <button class="admin-btn" id="pause-game-btn">
                     <i class="fas fa-pause"></i> Пауза / Продолжить
@@ -1643,9 +1645,9 @@
         <div style="line-height: 1.65; color: #ddd; font-size: 0.94rem;">
             <p><strong>Цель:</strong> Первыми открыть всех агентов своего цвета на поле 5×5.</p>
             <p><strong>Шпион-мастер (👑):</strong> Видит цвета всех карточек и даёт <strong>ровно одну подсказку за ход</strong> из <em>одного слова</em> и <em>числа</em>.</p>
-            <p><strong>Выбор слова:</strong> Нажмите на слово, чтобы выбрать его (повторный клик отжимает выбор). Если в команде несколько игроков — слово сработает, когда его выберут все агенты команды, после чего пройдёт задержка подтверждения.</p>
+            <p><strong>Выбор слова:</strong> Игрок может выбрать <strong>только одно слово</strong>. За каждое угаданное слово своей команды добавляется <strong>+10 сек</strong> к таймеру.</p>
             <p><strong>Завершение хода:</strong> Угадывающие могут досрочно передать ход соперникам голосованием большинства.</p>
-            <p><strong>Чат:</strong> В чате общаются все участники комнаты (игроки и наблюдатели), без системного спама.</p>
+            <p><strong>Чат:</strong> В чате общаются все участники комнаты (игроки и наблюдатели).</p>
         </div>
     </div>
 </div>
@@ -1664,6 +1666,7 @@
     const SUPABASE_URL = 'https://poudbyptdieyifbfdtet.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_pFDRFkpxo6PlZJM2Z5ZRxQ_BXIFkfnN';
     const ACTIVE_ROOM_STORAGE_KEY = 'codenames_active_room';
+    const CUSTOM_WORDS_STORAGE_KEY = 'codenames_custom_words_v1';
 
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
         auth: {
@@ -1675,6 +1678,7 @@
     });
 
     const TURN_SECONDS = 90;
+    const BONUS_SECONDS_PER_GUESS = 10;
     const PICK_CONFIRM_DELAY_MS = 1200;
     const PLAYER_DOT_COLORS = [
         '#e85cf8', '#00d2d3', '#feca57', '#1dd1a1',
@@ -1785,7 +1789,7 @@
         });
     }
 
-    const wordList = [
+    const baseWordList = [
         'АИСТ', 'АКУЛА', 'БАБОЧКА', 'БЕЛКА', 'БОБЁР', 'БУЙВОЛ', 'ВЕРБЛЮД', 'ВОЛК', 'ВОРОН', 'ВЫДРА',
         'ГАЗЕЛЬ', 'ГЕПАРД', 'ГОЛУБЬ', 'ГОРИЛЛА', 'ДЕЛЬФИН', 'ДИНОЗАВР', 'ДРАКОН', 'ДЯТЕЛ', 'ЁЖ', 'ЕНОТ',
         'ЖАБА', 'ЖИРАФ', 'ЖУК', 'ЗАЯЦ', 'ЗЕБРА', 'ЗМЕЯ', 'ИГУАНА', 'КАБАН', 'КАЛЬМАР', 'КЕНГУРУ',
@@ -1794,7 +1798,7 @@
         'МОРЖ', 'МУРАВЕЙ', 'НОСОРОГ', 'ОЛЕНЬ', 'ОРЁЛ', 'ОСМИНОГ', 'ПАНДА', 'ПАНТЕРА', 'ПАУК', 'ПЕЛИКАН',
         'ПИНГВИН', 'ПОПУГАЙ', 'ПУМА', 'ПЧЕЛА', 'РЫСЬ', 'САЛАМАНДРА', 'СКАТ', 'СКОРПИОН', 'СЛОН', 'СОВА',
         'СОБАКА', 'СОКОЛ', 'СТРЕКОЗА', 'СТРАУС', 'СУРИКАТ', 'ТАРАНТУЛ', 'ТИГР', 'ТЮЛЕНЬ', 'УЛИТКА', 'ФАЗАН',
-        'ФЕНИКС', 'ФЛАМИНГО', 'ХАМЕЛЕОН', 'ХОМЯК', 'ЦАПЛЯ', 'ЦИКАДА', 'ЧАЙКА', 'ЧЕПАРАХА', 'ЧЕРВЬ', 'ШАКАЛ',
+        'ФЕНИКС', 'ФЛАМИНГО', 'ХАМЕЛЕОН', 'ХОМЯК', 'ЦАПЛЯ', 'ЦИКАДА', 'ЧАЙКА', 'ЧЕРЕПАХА', 'ЧЕРВЬ', 'ШАКАЛ',
         'АЙСБЕРГ', 'АСТЕРОИД', 'БЕРЕГ', 'БОЛОТО', 'ВОДОПАД', 'ВОЛНА', 'ВУЛКАН', 'ГАЛАКТИКА', 'ГЕЙЗЕР', 'ГОРА',
         'ГРАД', 'ГРОЗА', 'ДЮНА', 'ДОЖДЬ', 'ЗАКАТ', 'ЗАТМЕНИЕ', 'ЗВЕЗДА', 'ЗЕМЛЯ', 'КАМЕНЬ', 'КАНЬОН',
         'КОМЕТА', 'КОСМОС', 'КРАТЕР', 'КРИСТАЛЛ', 'ЛАВИНА', 'ЛАВА', 'ЛЕДНИК', 'ЛЕС', 'ЛУНА', 'МЕТЕОР',
@@ -1864,6 +1868,41 @@
         'ФАТАЛИЗМ', 'ФИНАЛ', 'ФРАГМЕНТ', 'ХАОС', 'ХАРАКТЕР', 'ХИТРОСТЬ', 'ЦЕЛЬ', 'ЦИКЛ', 'ШАНС', 'ШОК',
         'ШТОРМ', 'ЭКСПЕРИМЕНТ', 'ЭЛИКСИР', 'ЭМОЦИЯ', 'ЭНЕРГЕТИКА', 'ЭРА', 'ЭФФЕКТ', 'ЮМОР'
     ];
+
+    function loadCustomWords() {
+        try {
+            const raw = localStorage.getItem(CUSTOM_WORDS_STORAGE_KEY);
+            const arr = raw ? JSON.parse(raw) : [];
+            return Array.isArray(arr) ? arr : [];
+        } catch (_) {
+            return [];
+        }
+    }
+
+    function saveCustomWords(arr) {
+        try {
+            localStorage.setItem(CUSTOM_WORDS_STORAGE_KEY, JSON.stringify(arr));
+        } catch (_) {}
+    }
+
+    let customWords = loadCustomWords();
+    let wordList = Array.from(new Set([...baseWordList, ...customWords]));
+
+    function rebuildWordList() {
+        wordList = Array.from(new Set([...baseWordList, ...customWords]));
+        const cntEl = document.getElementById('words-total-count');
+        if (cntEl) cntEl.textContent = wordList.length;
+    }
+
+    function parseImportedWords(rawText) {
+        return Array.from(new Set(
+            String(rawText || '')
+                .split(/[\n,;|\t]+/g)
+                .flatMap(chunk => chunk.trim().split(/\s+/g))
+                .map(w => w.replace(/[^а-яА-ЯёЁa-zA-Z0-9\-]/g, '').trim().toUpperCase())
+                .filter(w => w.length >= 2 && w.length <= 24)
+        ));
+    }
 
     let currentUser = null;
     let currentProfile = null;
@@ -2188,12 +2227,16 @@
     }
 
     function buildInitialGameState(gameNumber = 1, teamsLocked = false) {
-        const shuffledWords = [...wordList].sort(() => Math.random() - 0.5).slice(0, 25);
+        const pool = wordList.length >= 25 ? wordList : baseWordList;
+        const shuffledWords = [...pool].sort(() => Math.random() - 0.5).slice(0, 25);
         const blueStarts = gameNumber % 2 === 1;
         const cardTypes = [];
 
-        for (let i = 0; i < (blueStarts ? 9 : 8); i++) cardTypes.push('blue');
-        for (let i = 0; i < (blueStarts ? 8 : 9); i++) cardTypes.push('red');
+        const blueTotal = blueStarts ? 9 : 8;
+        const redTotal = blueStarts ? 8 : 9;
+
+        for (let i = 0; i < blueTotal; i++) cardTypes.push('blue');
+        for (let i = 0; i < redTotal; i++) cardTypes.push('red');
         for (let i = 0; i < 7; i++) cardTypes.push('neutral');
         cardTypes.push('assassin');
 
@@ -2208,8 +2251,8 @@
             })),
             blueScore: 0,
             redScore: 0,
-            blueCardsRemaining: blueStarts ? 9 : 8,
-            redCardsRemaining: blueStarts ? 8 : 9,
+            blueCardsRemaining: blueTotal,
+            redCardsRemaining: redTotal,
             currentTeam: blueStarts ? 'blue' : 'red',
             currentHint: null,
             hintGivenOnTurn: false,
@@ -2225,6 +2268,29 @@
             cardsBlocked: true,
             eloSettled: false
         };
+    }
+
+    function recalculateCardCounters(state) {
+        const cards = Array.isArray(state.cards) ? state.cards : [];
+        let blueRevealed = 0;
+        let redRevealed = 0;
+        let blueLeft = 0;
+        let redLeft = 0;
+
+        for (const c of cards) {
+            if (c.type === 'blue') {
+                if (c.revealed) blueRevealed++;
+                else blueLeft++;
+            } else if (c.type === 'red') {
+                if (c.revealed) redRevealed++;
+                else redLeft++;
+            }
+        }
+
+        state.blueScore = blueRevealed;
+        state.redScore = redRevealed;
+        state.blueCardsRemaining = blueLeft;
+        state.redCardsRemaining = redLeft;
     }
 
     async function getValidUser() {
@@ -2288,9 +2354,7 @@
             .maybeSingle();
 
         if (error || !room) {
-            if (options.silentNotFound) {
-                return false;
-            }
+            if (options.silentNotFound) return false;
             errEl.textContent = error ? error.message : 'Комната с таким кодом не найдена';
             return false;
         }
@@ -2330,6 +2394,7 @@
                 ? room.game_state.selectedCards
                 : {}
         };
+        recalculateCardCounters(gameState);
 
         if (room.status === 'lobby') {
             showLobbyRoomUI();
@@ -2405,6 +2470,12 @@
             .order('id', { ascending: true });
 
         if (!error && data) {
+            // Если текущий пользователь был исключён главой комнаты — выходим в лобби
+            if (currentUser && !data.some(p => p.user_id === currentUser.id)) {
+                alert('Вы были исключены из комнаты создателем.');
+                await leaveRoomCompletely(false);
+                return;
+            }
             roomPlayers = data;
             renderLobbyPlayers();
             renderTeamsPlayers();
@@ -2479,11 +2550,12 @@
                         ? updatedRoom.game_state.selectedCards
                         : {}
                 };
+                recalculateCardCounters(gameState);
 
                 if (
                     localSelectedCardId !== null &&
-                    !Array.isArray(gameState.selectedCards?.[localSelectedCardId]) ||
-                    (localSelectedCardId !== null && !gameState.selectedCards?.[localSelectedCardId]?.includes(currentUser.id))
+                    (!Array.isArray(gameState.selectedCards?.[localSelectedCardId]) ||
+                    !gameState.selectedCards?.[localSelectedCardId]?.includes(currentUser.id))
                 ) {
                     localSelectedCardId = null;
                 }
@@ -2618,15 +2690,16 @@
                         ${isRoomOwner ? '<span style="color: #9b59b6; font-size: 0.78rem; margin-left: 6px;">(Создатель)</span>' : ''}
                     </div>
                 </div>
-                ${isCreator && !isRoomOwner ? `<button class="leave-btn btn-sm" onclick="kickLobbyPlayer('${p.user_id}')"><i class="fas fa-times"></i></button>` : ''}
+                ${isCreator && !isRoomOwner ? `<button class="leave-btn btn-sm" onclick="kickPlayerFromRoom('${p.user_id}')" title="Исключить игрока"><i class="fas fa-user-times"></i></button>` : ''}
             `;
             list.appendChild(row);
         });
     }
 
-    window.kickLobbyPlayer = async function(targetUserId) {
-        if (currentRoom?.creator_id !== currentUser?.id) return;
+    window.kickPlayerFromRoom = async function(targetUserId) {
+        if (currentRoom?.creator_id !== currentUser?.id || !targetUserId || targetUserId === currentUser.id) return;
         await sb.from('room_players').delete().eq('room_code', currentRoom.code).eq('user_id', targetUserId);
+        await fetchRoomPlayers();
     };
 
     async function startGameFromLobby() {
@@ -2663,8 +2736,9 @@
         clearPickConfirmTimer();
         await trackMySelectedCard(null);
         sessionStorage.removeItem(ACTIVE_ROOM_STORAGE_KEY);
-        if (removePlayerRow && currentRoom && currentUser) {
-            await sb.from('room_players').delete().eq('room_code', currentRoom.code).eq('user_id', currentUser.id);
+        const roomCode = currentRoom?.code;
+        if (removePlayerRow && roomCode && currentUser) {
+            await sb.from('room_players').delete().eq('room_code', roomCode).eq('user_id', currentUser.id);
         }
         if (roomChannel) {
             sb.removeChannel(roomChannel);
@@ -2750,6 +2824,8 @@
         const redBox = document.getElementById('red-players');
         if (!blueBox || !redBox) return;
 
+        const isCreator = currentRoom?.creator_id === currentUser?.id;
+
         blueBox.innerHTML = '';
         redBox.innerHTML = '';
 
@@ -2757,6 +2833,7 @@
             if (!p.team) return;
             const prof = p.profiles || {};
             const dotColor = getPlayerDotColor(p.user_id);
+            const canKick = isCreator && p.user_id !== currentUser?.id;
             const el = document.createElement('div');
             el.className = `player ${p.role === 'master' ? 'master' : ''} ${p.user_id === currentUser?.id ? 'me' : ''}`;
             el.innerHTML = `
@@ -2765,7 +2842,10 @@
                     <img src="${resolveAvatar(prof)}" alt="" class="clickable-avatar" onclick="viewPlayerProfile('${p.user_id}')" title="Открыть профиль">
                     <span class="player-name-text clickable-user" onclick="viewPlayerProfile('${p.user_id}')" title="Открыть профиль">${escapeHtml(prof.username || 'Агент')}</span>
                 </div>
-                <span style="font-size: 0.7rem; color: var(--gold);">${prof.elo || 1000}</span>
+                <div class="player-right">
+                    <span style="font-size: 0.7rem; color: var(--gold);">${prof.elo || 1000}</span>
+                    ${canKick ? `<button type="button" class="kick-mini-btn" onclick="kickPlayerFromRoom('${p.user_id}')" title="Исключить из комнаты"><i class="fas fa-times"></i></button>` : ''}
+                </div>
             `;
             if (p.team === 'blue') blueBox.appendChild(el);
             if (p.team === 'red') redBox.appendChild(el);
@@ -2954,7 +3034,6 @@
         }
 
         const numericCardId = Number(readyCardId);
-        // Не перезапускаем таймер, если эта карточка уже подтверждается
         if (activeConfirmCardId === numericCardId && (pickDelayTimer || isCommittingCard)) {
             return;
         }
@@ -3011,6 +3090,7 @@
         }, PICK_CONFIRM_DELAY_MS);
     }
 
+    // Каждый игрок может пикать ТОЛЬКО одно слово одновременно
     async function togglePickCard(cardId) {
         if (isCommittingCard || gameState.gameOver || currentRoom?.status !== 'playing' || gameState.cardsBlocked) {
             return;
@@ -3022,28 +3102,34 @@
         const card = gameState.cards.find(c => c.id === cardId);
         if (!card || card.revealed) return;
 
-        const map = { ...(gameState.selectedCards || {}) };
-        const currentList = Array.isArray(map[cardId]) ? [...map[cardId]] : [];
-        const idx = currentList.indexOf(currentUser.id);
+        const map = {};
+        const prevMap = gameState.selectedCards || {};
+        for (const [k, list] of Object.entries(prevMap)) {
+            if (!Array.isArray(list)) continue;
+            const filtered = list.filter(uid => uid !== currentUser.id);
+            if (filtered.length > 0) {
+                map[k] = filtered;
+            }
+        }
 
-        if (idx >= 0) {
-            currentList.splice(idx, 1);
+        const wasAlreadyPickedOnThisCard =
+            Array.isArray(prevMap[cardId]) && prevMap[cardId].includes(currentUser.id);
+
+        if (wasAlreadyPickedOnThisCard) {
             if (localSelectedCardId === cardId) {
                 await trackMySelectedCard(null);
             }
+            if (activeConfirmCardId === cardId) {
+                clearPickConfirmTimer();
+            }
         } else {
-            currentList.push(currentUser.id);
+            const targetList = Array.isArray(map[cardId]) ? [...map[cardId]] : [];
+            targetList.push(currentUser.id);
+            map[cardId] = targetList;
             await trackMySelectedCard(cardId);
-        }
-
-        if (currentList.length > 0) {
-            map[cardId] = currentList;
-        } else {
-            delete map[cardId];
-        }
-
-        if (activeConfirmCardId === cardId && !currentList.includes(currentUser.id)) {
-            clearPickConfirmTimer();
+            if (activeConfirmCardId !== null && activeConfirmCardId !== cardId) {
+                clearPickConfirmTimer();
+            }
         }
 
         gameState.selectedCards = map;
@@ -3055,7 +3141,6 @@
     function updateGameBoard() {
         const container = document.getElementById('cards-container');
         if (!container) return;
-        container.innerHTML = '';
 
         const me = getMyPlayerRecord();
         const isMaster = me?.role === 'master';
@@ -3071,11 +3156,13 @@
         const holdBanner = document.getElementById('hold-hint-banner');
         if (holdBanner) {
             holdBanner.style.display = canPickNow ? 'block' : 'none';
-            holdBanner.innerHTML = '<i class="fas fa-mouse-pointer"></i> Нажмите на слово для выбора (повторный клик — отжать). В команде из нескольких игроков слово сработает, когда на него нажмут все.';
+            holdBanner.innerHTML = '<i class="fas fa-mouse-pointer"></i> Можно выбрать только 1 слово (повторный клик — отжать). За каждое угаданное слово своей команды +10 сек.';
         }
 
         const selectedMap = gameState.selectedCards || {};
         const activeAgents = getActiveTeamAgents();
+
+        const fragment = document.createDocumentFragment();
 
         gameState.cards.forEach(card => {
             const voters = Array.isArray(selectedMap[card.id]) ? selectedMap[card.id] : [];
@@ -3151,12 +3238,13 @@
             if (canClick) {
                 cardEl.addEventListener('click', () => {
                     togglePickCard(card.id);
-                });
+                }, { passive: true });
             }
 
-            container.appendChild(cardEl);
+            fragment.appendChild(cardEl);
         });
 
+        container.replaceChildren(fragment);
         syncTeamPickConfirmation();
     }
 
@@ -3249,6 +3337,13 @@
         await pushGameState();
     }
 
+    function checkWinCondition(state) {
+        recalculateCardCounters(state);
+        if (state.blueCardsRemaining <= 0) return 'blue';
+        if (state.redCardsRemaining <= 0) return 'red';
+        return null;
+    }
+
     async function selectCard(cardId) {
         const me = getMyPlayerRecord();
         if (!me || me.role !== 'agent' || me.team !== gameState.currentTeam || gameState.cardsBlocked || gameState.gameOver) return;
@@ -3266,28 +3361,34 @@
             await trackMySelectedCard(null);
         }
 
-        if (card.type === 'blue') {
-            gameState.blueScore++;
-            gameState.blueCardsRemaining--;
-            if (gameState.blueCardsRemaining === 0) {
-                await finishMatch('blue');
-                return;
-            }
-            if (gameState.currentTeam !== 'blue') switchTurnState();
-        } else if (card.type === 'red') {
-            gameState.redScore++;
-            gameState.redCardsRemaining--;
-            if (gameState.redCardsRemaining === 0) {
-                await finishMatch('red');
-                return;
-            }
-            if (gameState.currentTeam !== 'red') switchTurnState();
-        } else if (card.type === 'neutral') {
-            switchTurnState();
-        } else if (card.type === 'assassin') {
+        recalculateCardCounters(gameState);
+
+        if (card.type === 'assassin') {
             const winner = gameState.currentTeam === 'blue' ? 'red' : 'blue';
             await finishMatch(winner);
             return;
+        }
+
+        const winByCards = checkWinCondition(gameState);
+        if (winByCards) {
+            await finishMatch(winByCards);
+            return;
+        }
+
+        if (card.type === 'blue') {
+            if (gameState.currentTeam === 'blue') {
+                gameState.timeLeft = Math.min(TURN_SECONDS, (gameState.timeLeft || 0) + BONUS_SECONDS_PER_GUESS);
+            } else {
+                switchTurnState();
+            }
+        } else if (card.type === 'red') {
+            if (gameState.currentTeam === 'red') {
+                gameState.timeLeft = Math.min(TURN_SECONDS, (gameState.timeLeft || 0) + BONUS_SECONDS_PER_GUESS);
+            } else {
+                switchTurnState();
+            }
+        } else if (card.type === 'neutral') {
+            switchTurnState();
         }
 
         await pushGameState();
@@ -3309,6 +3410,7 @@
     async function finishMatch(winningTeam) {
         clearPickConfirmTimer();
         await trackMySelectedCard(null);
+        recalculateCardCounters(gameState);
         gameState.gameOver = true;
         gameState.winner = winningTeam;
         gameState.timerRunning = false;
@@ -3399,17 +3501,13 @@
         cel.classList.add('active');
     }
 
+    // Мастера при шафле/новом раунде не сбрасываем
     async function startNextRound() {
         isCommittingCard = false;
         clearPickConfirmTimer();
         await trackMySelectedCard(null);
         const nextNum = (gameState.gameNumber || 1) + 1;
         gameState = buildInitialGameState(nextNum, gameState.teamsLocked);
-
-        await sb
-            .from('room_players')
-            .update({ role: 'agent' })
-            .eq('room_code', currentRoom.code);
 
         await sb
             .from('rooms')
@@ -3451,18 +3549,33 @@
         await pushGameState();
     }
 
+    // Рандомный выбор команд с выдачей ровно одного мастера в каждой команде
     async function adminShuffleTeams() {
-        if (currentRoom?.creator_id !== currentUser?.id) return;
+        if (currentRoom?.creator_id !== currentUser?.id || !currentRoom) return;
         const shuffled = [...roomPlayers].sort(() => Math.random() - 0.5);
         const half = Math.ceil(shuffled.length / 2);
 
-        for (let i = 0; i < shuffled.length; i++) {
-            const team = i < half ? 'blue' : 'red';
+        const blueGroup = shuffled.slice(0, half);
+        const redGroup = shuffled.slice(half);
+
+        const blueMasterIdx = blueGroup.length > 0 ? Math.floor(Math.random() * blueGroup.length) : -1;
+        const redMasterIdx = redGroup.length > 0 ? Math.floor(Math.random() * redGroup.length) : -1;
+
+        for (let i = 0; i < blueGroup.length; i++) {
             await sb
                 .from('room_players')
-                .update({ team, role: 'agent' })
-                .eq('id', shuffled[i].id);
+                .update({ team: 'blue', role: i === blueMasterIdx ? 'master' : 'agent' })
+                .eq('id', blueGroup[i].id);
         }
+
+        for (let i = 0; i < redGroup.length; i++) {
+            await sb
+                .from('room_players')
+                .update({ team: 'red', role: i === redMasterIdx ? 'master' : 'agent' })
+                .eq('id', redGroup[i].id);
+        }
+
+        await fetchRoomPlayers();
     }
 
     async function adminTogglePause() {
@@ -3472,6 +3585,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
+        rebuildWordList();
         document.getElementById('reg-avatar-preview').src = makeDefaultAvatarDataUrl('A');
 
         document.getElementById('toggle-pass-btn').onclick = () => {
@@ -3645,6 +3759,46 @@
         document.getElementById('header-profile-btn').onclick = () => openProfileModal(currentUser?.id);
         document.getElementById('close-profile-btn').onclick = () => {
             document.getElementById('profile-modal').style.display = 'none';
+        };
+
+        // Импорт слов
+        document.getElementById('open-import-words-btn').onclick = () => {
+            rebuildWordList();
+            document.getElementById('import-words-status').textContent = '';
+            document.getElementById('words-modal').style.display = 'flex';
+        };
+        document.getElementById('close-words-btn').onclick = () => {
+            document.getElementById('words-modal').style.display = 'none';
+        };
+        document.getElementById('import-words-file').addEventListener('change', async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            const text = await file.text();
+            const ta = document.getElementById('import-words-textarea');
+            ta.value = ta.value ? `${ta.value}\n${text}` : text;
+        });
+        document.getElementById('apply-import-words-btn').onclick = () => {
+            const ta = document.getElementById('import-words-textarea');
+            const parsed = parseImportedWords(ta.value);
+            if (parsed.length === 0) {
+                document.getElementById('import-words-status').style.color = '#ff7675';
+                document.getElementById('import-words-status').textContent = 'Не найдено подходящих слов для импорта.';
+                return;
+            }
+            const beforeCount = wordList.length;
+            customWords = Array.from(new Set([...customWords, ...parsed]));
+            saveCustomWords(customWords);
+            rebuildWordList();
+            ta.value = '';
+            document.getElementById('import-words-status').style.color = 'var(--green)';
+            document.getElementById('import-words-status').textContent = `Добавлено новых слов: ${wordList.length - beforeCount}. Всего в словаре: ${wordList.length}.`;
+        });
+        document.getElementById('reset-custom-words-btn').onclick = () => {
+            customWords = [];
+            saveCustomWords([]);
+            rebuildWordList();
+            document.getElementById('import-words-status').style.color = 'var(--gold)';
+            document.getElementById('import-words-status').textContent = `Свой словарь очищен. Базовых слов: ${wordList.length}.`;
         };
 
         document.getElementById('create-game-btn').onclick = createRoom;
