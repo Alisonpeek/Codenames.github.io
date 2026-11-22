@@ -251,7 +251,6 @@
             box-shadow: 0 0 0 2px var(--gold), 0 8px 20px rgba(241, 196, 15, 0.3);
         }
 
-        /* Затемнение пикнутых слов на поле шпион-мастера */
         .card.master-view.master-picked-preview {
             filter: brightness(0.52) contrast(1.08);
             box-shadow: inset 0 0 0 2px var(--gold), 0 4px 12px rgba(0, 0, 0, 0.65);
@@ -2470,7 +2469,6 @@
             .order('id', { ascending: true });
 
         if (!error && data) {
-            // Если текущий пользователь был исключён главой комнаты — выходим в лобби
             if (currentUser && !data.some(p => p.user_id === currentUser.id)) {
                 alert('Вы были исключены из комнаты создателем.');
                 await leaveRoomCompletely(false);
@@ -2552,12 +2550,11 @@
                 };
                 recalculateCardCounters(gameState);
 
-                if (
-                    localSelectedCardId !== null &&
-                    (!Array.isArray(gameState.selectedCards?.[localSelectedCardId]) ||
-                    !gameState.selectedCards?.[localSelectedCardId]?.includes(currentUser.id))
-                ) {
-                    localSelectedCardId = null;
+                if (localSelectedCardId !== null) {
+                    const voters = gameState.selectedCards?.[localSelectedCardId];
+                    if (!Array.isArray(voters) || !voters.includes(currentUser.id)) {
+                        localSelectedCardId = null;
+                    }
                 }
 
                 if (prevStatus === 'lobby' && updatedRoom.status === 'playing') {
@@ -3090,7 +3087,6 @@
         }, PICK_CONFIRM_DELAY_MS);
     }
 
-    // Каждый игрок может пикать ТОЛЬКО одно слово одновременно
     async function togglePickCard(cardId) {
         if (isCommittingCard || gameState.gameOver || currentRoom?.status !== 'playing' || gameState.cardsBlocked) {
             return;
@@ -3501,7 +3497,6 @@
         cel.classList.add('active');
     }
 
-    // Мастера при шафле/новом раунде не сбрасываем
     async function startNextRound() {
         isCommittingCard = false;
         clearPickConfirmTimer();
@@ -3549,7 +3544,6 @@
         await pushGameState();
     }
 
-    // Рандомный выбор команд с выдачей ровно одного мастера в каждой команде
     async function adminShuffleTeams() {
         if (currentRoom?.creator_id !== currentUser?.id || !currentRoom) return;
         const shuffled = [...roomPlayers].sort(() => Math.random() - 0.5);
@@ -3761,7 +3755,6 @@
             document.getElementById('profile-modal').style.display = 'none';
         };
 
-        // Импорт слов
         document.getElementById('open-import-words-btn').onclick = () => {
             rebuildWordList();
             document.getElementById('import-words-status').textContent = '';
