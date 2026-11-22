@@ -3785,7 +3785,6 @@
             ta.value = '';
             document.getElementById('import-words-status').style.color = 'var(--green)';
             document.getElementById('import-words-status').textContent = `Добавлено новых слов: ${wordList.length - beforeCount}. Всего в словаре: ${wordList.length}.`;
-        });
         document.getElementById('reset-custom-words-btn').onclick = () => {
             customWords = [];
             saveCustomWords([]);
