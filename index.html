@@ -1919,6 +1919,39 @@
     let activeConfirmCardId = null;
     let isCommittingCard = false;
 
+    function createTimerFields(seconds = TURN_SECONDS, running = true, nowMs = Date.now()) {
+        const clamped = Math.max(0, Math.min(TURN_SECONDS, Number.isFinite(seconds) ? seconds : TURN_SECONDS));
+        return {
+            timeLeft: clamped,
+            timerRunning: Boolean(running),
+            turnDeadlineAt: running ? nowMs + clamped * 1000 : null,
+            pausedTimeLeft: running ? null : clamped
+        };
+    }
+
+    function syncGameStateTimeFromDeadline(state, nowMs = Date.now()) {
+        if (!state) return 0;
+        if (state.gameOver) {
+            state.timerRunning = false;
+            state.turnDeadlineAt = null;
+            state.timeLeft = 0;
+            return 0;
+        }
+        if (state.timerRunning && typeof state.turnDeadlineAt === 'number') {
+            const rem = Math.max(0, Math.min(TURN_SECONDS, Math.ceil((state.turnDeadlineAt - nowMs) / 1000)));
+            state.timeLeft = rem;
+            return rem;
+        }
+        if (!state.timerRunning && typeof state.pausedTimeLeft === 'number') {
+            state.timeLeft = Math.max(0, Math.min(TURN_SECONDS, state.pausedTimeLeft));
+            return state.timeLeft;
+        }
+        if (typeof state.timeLeft === 'number') {
+            return Math.max(0, Math.min(TURN_SECONDS, state.timeLeft));
+        }
+        return TURN_SECONDS;
+    }
+
     let gameState = {
         cards: [],
         blueScore: 0,
@@ -1933,8 +1966,7 @@
         selectedCards: {},
         gameOver: false,
         winner: null,
-        timeLeft: TURN_SECONDS,
-        timerRunning: true,
+        ...createTimerFields(TURN_SECONDS, true),
         hintsHistory: [],
         gameNumber: 1,
         cardsBlocked: true,
@@ -2260,8 +2292,7 @@
             selectedCards: {},
             gameOver: false,
             winner: null,
-            timeLeft: TURN_SECONDS,
-            timerRunning: true,
+            ...createTimerFields(TURN_SECONDS, true),
             hintsHistory: [],
             gameNumber,
             cardsBlocked: true,
@@ -2290,6 +2321,39 @@
         state.redScore = redRevealed;
         state.blueCardsRemaining = blueLeft;
         state.redCardsRemaining = redLeft;
+    }
+
+    function applyIncomingGameState(rawState, roomStatus = currentRoom?.status) {
+        const merged = {
+            ...gameState,
+            ...(rawState || {}),
+            hintGivenOnTurn: Boolean(rawState?.hintGivenOnTurn ?? rawState?.currentHint),
+            teamsLocked: Boolean(rawState?.teamsLocked),
+            skipVotes: Array.isArray(rawState?.skipVotes) ? rawState.skipVotes : [],
+            selectedCards: (rawState?.selectedCards && typeof rawState.selectedCards === 'object')
+                ? rawState.selectedCards
+                : {}
+        };
+        recalculateCardCounters(merged);
+        if (roomStatus === 'paused' && !merged.gameOver) {
+            merged.timerRunning = false;
+            if (typeof merged.pausedTimeLeft !== 'number') {
+                merged.pausedTimeLeft = syncGameStateTimeFromDeadline(merged);
+            }
+            merged.timeLeft = merged.pausedTimeLeft;
+        } else if (!merged.gameOver) {
+            merged.timerRunning = true;
+            if (typeof merged.turnDeadlineAt !== 'number') {
+                const baseSec = typeof merged.timeLeft === 'number' ? merged.timeLeft : TURN_SECONDS;
+                merged.turnDeadlineAt = Date.now() + baseSec * 1000;
+            }
+            syncGameStateTimeFromDeadline(merged);
+        } else {
+            merged.timerRunning = false;
+            merged.turnDeadlineAt = null;
+            merged.timeLeft = 0;
+        }
+        gameState = merged;
     }
 
     async function getValidUser() {
@@ -2383,17 +2447,7 @@
 
         currentRoom = room;
         sessionStorage.setItem(ACTIVE_ROOM_STORAGE_KEY, code);
-        gameState = {
-            ...gameState,
-            ...room.game_state,
-            hintGivenOnTurn: Boolean(room.game_state?.hintGivenOnTurn ?? room.game_state?.currentHint),
-            teamsLocked: Boolean(room.game_state?.teamsLocked),
-            skipVotes: Array.isArray(room.game_state?.skipVotes) ? room.game_state.skipVotes : [],
-            selectedCards: (room.game_state?.selectedCards && typeof room.game_state.selectedCards === 'object')
-                ? room.game_state.selectedCards
-                : {}
-        };
-        recalculateCardCounters(gameState);
+        applyIncomingGameState(room.game_state, room.status);
 
         if (room.status === 'lobby') {
             showLobbyRoomUI();
@@ -2450,6 +2504,12 @@
         document.getElementById('resume-pause-btn').style.display = (isPaused && isCreator) ? 'inline-block' : 'none';
     }
 
+    async function handleKickedFromRoom() {
+        if (!currentRoom) return;
+        alert('Вы были исключены из комнаты создателем.');
+        await leaveRoomCompletely(false);
+    }
+
     async function fetchRoomPlayers() {
         if (!currentRoom) return;
         const { data, error } = await sb
@@ -2470,8 +2530,7 @@
 
         if (!error && data) {
             if (currentUser && !data.some(p => p.user_id === currentUser.id)) {
-                alert('Вы были исключены из комнаты создателем.');
-                await leaveRoomCompletely(false);
+                await handleKickedFromRoom();
                 return;
             }
             roomPlayers = data;
@@ -2529,6 +2588,11 @@
                 peerSelectedCards = map;
                 updateGameBoard();
             })
+            .on('broadcast', { event: 'kick_player' }, async (payload) => {
+                if (payload?.payload?.targetUserId === currentUser?.id) {
+                    await handleKickedFromRoom();
+                }
+            })
             .on('postgres_changes', {
                 event: 'UPDATE',
                 schema: 'public',
@@ -2538,17 +2602,7 @@
                 const updatedRoom = payload.new;
                 const prevStatus = currentRoom?.status;
                 currentRoom = updatedRoom;
-                gameState = {
-                    ...gameState,
-                    ...updatedRoom.game_state,
-                    hintGivenOnTurn: Boolean(updatedRoom.game_state?.hintGivenOnTurn ?? updatedRoom.game_state?.currentHint),
-                    teamsLocked: Boolean(updatedRoom.game_state?.teamsLocked),
-                    skipVotes: Array.isArray(updatedRoom.game_state?.skipVotes) ? updatedRoom.game_state.skipVotes : [],
-                    selectedCards: (updatedRoom.game_state?.selectedCards && typeof updatedRoom.game_state.selectedCards === 'object')
-                        ? updatedRoom.game_state.selectedCards
-                        : {}
-                };
-                recalculateCardCounters(gameState);
+                applyIncomingGameState(updatedRoom.game_state, updatedRoom.status);
 
                 if (localSelectedCardId !== null) {
                     const voters = gameState.selectedCards?.[localSelectedCardId];
@@ -2577,7 +2631,14 @@
                 schema: 'public',
                 table: 'room_players',
                 filter: `room_code=eq.${code}`
-            }, async () => {
+            }, async (payload) => {
+                if (
+                    payload.eventType === 'DELETE' &&
+                    payload.old?.user_id === currentUser?.id
+                ) {
+                    await handleKickedFromRoom();
+                    return;
+                }
                 await fetchRoomPlayers();
             })
             .on('postgres_changes', {
@@ -2616,6 +2677,10 @@
 
     async function pushGameState() {
         if (!currentRoom) return;
+        if (!gameState.gameOver && gameState.timerRunning && typeof gameState.turnDeadlineAt !== 'number') {
+            const rem = typeof gameState.timeLeft === 'number' ? gameState.timeLeft : TURN_SECONDS;
+            gameState.turnDeadlineAt = Date.now() + rem * 1000;
+        }
         await sb
             .from('rooms')
             .update({
@@ -2687,7 +2752,7 @@
                         ${isRoomOwner ? '<span style="color: #9b59b6; font-size: 0.78rem; margin-left: 6px;">(Создатель)</span>' : ''}
                     </div>
                 </div>
-                ${isCreator && !isRoomOwner ? `<button class="leave-btn btn-sm" onclick="kickPlayerFromRoom('${p.user_id}')" title="Исключить игрока"><i class="fas fa-user-times"></i></button>` : ''}
+                ${isCreator && !isRoomOwner ? `<button class="leave-btn btn-sm" onclick="kickPlayerFromRoom('${p.user_id}')" title="Исключить из комнаты"><i class="fas fa-user-times"></i></button>` : ''}
             `;
             list.appendChild(row);
         });
@@ -2695,14 +2760,35 @@
 
     window.kickPlayerFromRoom = async function(targetUserId) {
         if (currentRoom?.creator_id !== currentUser?.id || !targetUserId || targetUserId === currentUser.id) return;
-        await sb.from('room_players').delete().eq('room_code', currentRoom.code).eq('user_id', targetUserId);
+        const roomCode = currentRoom.code;
+
+        if (roomChannel) {
+            try {
+                await roomChannel.send({
+                    type: 'broadcast',
+                    event: 'kick_player',
+                    payload: { targetUserId }
+                });
+            } catch (_) {}
+        }
+
+        await sb
+            .from('room_players')
+            .delete()
+            .eq('room_code', roomCode)
+            .eq('user_id', targetUserId);
+
+        if (Array.isArray(gameState.skipVotes) && gameState.skipVotes.includes(targetUserId)) {
+            gameState.skipVotes = gameState.skipVotes.filter(id => id !== targetUserId);
+            await pushGameState();
+        }
+
         await fetchRoomPlayers();
     };
 
     async function startGameFromLobby() {
         if (currentRoom?.creator_id !== currentUser?.id) return;
-        gameState.timeLeft = TURN_SECONDS;
-        gameState.timerRunning = true;
+        Object.assign(gameState, createTimerFields(TURN_SECONDS, true));
         gameState.cardsBlocked = true;
         gameState.hintGivenOnTurn = false;
         gameState.currentHint = null;
@@ -2748,6 +2834,7 @@
         document.getElementById('winner-celebration').classList.remove('active');
         document.getElementById('game-paused-overlay').classList.remove('active');
         document.getElementById('game-lobby').style.display = 'none';
+        document.getElementById('code-input-section').classList.remove('active');
         document.getElementById('lobby-choice-cards').style.display = 'flex';
         showLoggedInLobbyUI();
     }
@@ -2995,6 +3082,7 @@
     }
 
     function syncAllUI() {
+        syncGameStateTimeFromDeadline(gameState);
         updateGameBoard();
         updateScoreUI();
         updateTurnIndicatorUI();
@@ -3315,8 +3403,7 @@
         gameState.cardsBlocked = false;
         gameState.skipVotes = [];
         gameState.selectedCards = {};
-        gameState.timeLeft = TURN_SECONDS;
-        gameState.timerRunning = true;
+        Object.assign(gameState, createTimerFields(TURN_SECONDS, true));
         gameState.hintsHistory.push({
             word,
             number: num,
@@ -3371,15 +3458,19 @@
             return;
         }
 
+        const currentRem = syncGameStateTimeFromDeadline(gameState);
+
         if (card.type === 'blue') {
             if (gameState.currentTeam === 'blue') {
-                gameState.timeLeft = Math.min(TURN_SECONDS, (gameState.timeLeft || 0) + BONUS_SECONDS_PER_GUESS);
+                const nextSec = Math.min(TURN_SECONDS, currentRem + BONUS_SECONDS_PER_GUESS);
+                Object.assign(gameState, createTimerFields(nextSec, true));
             } else {
                 switchTurnState();
             }
         } else if (card.type === 'red') {
             if (gameState.currentTeam === 'red') {
-                gameState.timeLeft = Math.min(TURN_SECONDS, (gameState.timeLeft || 0) + BONUS_SECONDS_PER_GUESS);
+                const nextSec = Math.min(TURN_SECONDS, currentRem + BONUS_SECONDS_PER_GUESS);
+                Object.assign(gameState, createTimerFields(nextSec, true));
             } else {
                 switchTurnState();
             }
@@ -3399,8 +3490,7 @@
         gameState.hintGivenOnTurn = false;
         gameState.skipVotes = [];
         gameState.selectedCards = {};
-        gameState.timerRunning = true;
-        gameState.timeLeft = TURN_SECONDS;
+        Object.assign(gameState, createTimerFields(TURN_SECONDS, true));
     }
 
     async function finishMatch(winningTeam) {
@@ -3410,6 +3500,9 @@
         gameState.gameOver = true;
         gameState.winner = winningTeam;
         gameState.timerRunning = false;
+        gameState.turnDeadlineAt = null;
+        gameState.pausedTimeLeft = null;
+        gameState.timeLeft = 0;
         gameState.skipVotes = [];
         gameState.selectedCards = {};
         gameState.cards.forEach(c => c.revealed = true);
@@ -3512,30 +3605,29 @@
 
     function updateTimerUI() {
         const el = document.getElementById('timer');
-        if (!gameState.timerRunning || gameState.timeLeft <= 0) {
+        const rem = syncGameStateTimeFromDeadline(gameState);
+        if ((!gameState.timerRunning && currentRoom?.status !== 'paused') || gameState.gameOver) {
             el.textContent = '--:--';
             el.className = 'timer';
             return;
         }
-        const m = Math.floor(gameState.timeLeft / 60);
-        const s = gameState.timeLeft % 60;
+        const m = Math.floor(rem / 60);
+        const s = rem % 60;
         const prefix = gameState.cardsBlocked ? '👑 Мастер: ' : '🕵️ Агенты: ';
         el.textContent = `${prefix}${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-        el.className = 'timer running' + (gameState.timeLeft <= 20 ? ' warning' : '');
+        el.className = 'timer running' + (rem <= 20 ? ' warning' : '');
     }
 
     setInterval(async () => {
-        if (currentRoom?.status === 'playing' && gameState.timerRunning && !gameState.gameOver) {
-            if (gameState.timeLeft > 0) {
-                gameState.timeLeft--;
-                updateTimerUI();
-                if (gameState.timeLeft === 0 && currentRoom.creator_id === currentUser?.id) {
-                    switchTurnState();
-                    await pushGameState();
-                }
+        if (currentRoom?.status === 'playing' && !gameState.gameOver) {
+            const rem = syncGameStateTimeFromDeadline(gameState);
+            updateTimerUI();
+            if (rem === 0 && currentRoom.creator_id === currentUser?.id) {
+                switchTurnState();
+                await pushGameState();
             }
         }
-    }, 1000);
+    }, 500);
 
     async function adminToggleLockTeams() {
         if (currentRoom?.creator_id !== currentUser?.id) return;
@@ -3573,9 +3665,31 @@
     }
 
     async function adminTogglePause() {
-        if (currentRoom?.creator_id !== currentUser?.id) return;
-        const newStatus = currentRoom.status === 'paused' ? 'playing' : 'paused';
-        await sb.from('rooms').update({ status: newStatus }).eq('code', currentRoom.code);
+        if (currentRoom?.creator_id !== currentUser?.id || !currentRoom) return;
+        const goingToPause = currentRoom.status !== 'paused';
+        const newStatus = goingToPause ? 'paused' : 'playing';
+
+        if (goingToPause) {
+            const rem = syncGameStateTimeFromDeadline(gameState);
+            gameState.timerRunning = false;
+            gameState.turnDeadlineAt = null;
+            gameState.pausedTimeLeft = rem;
+            gameState.timeLeft = rem;
+        } else {
+            const resumeSec = typeof gameState.pausedTimeLeft === 'number'
+                ? gameState.pausedTimeLeft
+                : (typeof gameState.timeLeft === 'number' ? gameState.timeLeft : TURN_SECONDS);
+            Object.assign(gameState, createTimerFields(resumeSec, true));
+        }
+
+        await sb
+            .from('rooms')
+            .update({
+                status: newStatus,
+                game_state: gameState,
+                updated_at: new Date().toISOString()
+            })
+            .eq('code', currentRoom.code);
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
