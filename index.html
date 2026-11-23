@@ -19,7 +19,7 @@
             --green: #2ecc71;
         }
 
-        * {
+        *, *::before, *::after {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -250,33 +250,19 @@
             box-shadow: 0 0 0 2px var(--gold), 0 8px 20px rgba(241, 196, 15, 0.3);
         }
 
+        /* Затемнение у мастера всё время, пока слово выбрано (пикнуто) командой */
         .card.master-view.master-picked-preview {
-            filter: brightness(0.38) saturate(0.85);
-            box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.8), 0 0 0 2px var(--gold);
-            transform: scale(0.98);
+            filter: brightness(0.42) saturate(0.85);
+            box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.75), 0 0 0 2px rgba(255, 255, 255, 0.35);
+            transform: scale(0.985);
         }
 
         .card.master-view.master-picked-preview::before {
             content: "";
             position: absolute;
             inset: 0;
-            background: rgba(6, 10, 20, 0.48);
+            background: rgba(5, 9, 18, 0.45);
             z-index: 1;
-            pointer-events: none;
-        }
-
-        .card.master-view.master-picked-preview::after {
-            content: "👁 ВЫБРАНО";
-            position: absolute;
-            top: 5px;
-            left: 6px;
-            font-size: 0.62rem;
-            letter-spacing: 0.5px;
-            background: rgba(0, 0, 0, 0.85);
-            color: var(--gold);
-            padding: 1px 5px;
-            border-radius: 4px;
-            z-index: 4;
             pointer-events: none;
         }
 
@@ -3294,10 +3280,12 @@
         const fragment = document.createDocumentFragment();
 
         gameState.cards.forEach(card => {
+            const presenceHolders = !card.revealed ? (peerSelectedCards[card.id] || []) : [];
             const voters = !card.revealed && Array.isArray(selectedMap[card.id]) ? selectedMap[card.id] : [];
-            const hasAnyPick = !card.revealed && voters.length > 0;
+            const hasAnyPick = !card.revealed && (voters.length > 0 || presenceHolders.length > 0);
             const allAgentsPicked =
-                hasAnyPick &&
+                !card.revealed &&
+                voters.length > 0 &&
                 activeAgents.length > 0 &&
                 activeAgents.every(a => voters.includes(a.user_id));
 
@@ -3330,7 +3318,6 @@
             wordSpan.textContent = card.word;
             cardEl.appendChild(wordSpan);
 
-            const presenceHolders = !card.revealed ? (peerSelectedCards[card.id] || []) : [];
             const dotSources = voters.map(uid => {
                 const p = roomPlayers.find(rp => rp.user_id === uid);
                 const pres = presenceHolders.find(ph => ph.userId === uid);
