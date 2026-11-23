@@ -224,7 +224,7 @@
             border-radius: 7px;
             font-weight: bold;
             cursor: pointer;
-            transition: transform 0.14s ease, box-shadow 0.16s ease, filter 0.16s ease, background-color 0.16s ease;
+            transition: transform 0.1s ease, box-shadow 0.12s ease, filter 0.12s ease, background-color 0.12s ease;
             padding: 6px;
             user-select: none;
             -webkit-user-select: none;
@@ -234,7 +234,6 @@
             position: relative;
             overflow: hidden;
             min-height: 58px;
-            will-change: transform;
         }
 
         .card:hover:not(.disabled):not(.blocked) {
@@ -252,18 +251,28 @@
         }
 
         .card.master-view.master-picked-preview {
-            filter: brightness(0.52) contrast(1.08);
-            box-shadow: inset 0 0 0 2px var(--gold), 0 4px 12px rgba(0, 0, 0, 0.65);
+            filter: brightness(0.38) saturate(0.85);
+            box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.8), 0 0 0 2px var(--gold);
+            transform: scale(0.98);
+        }
+
+        .card.master-view.master-picked-preview::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: rgba(6, 10, 20, 0.48);
+            z-index: 1;
+            pointer-events: none;
         }
 
         .card.master-view.master-picked-preview::after {
-            content: "👁 ПИК";
+            content: "👁 ВЫБРАНО";
             position: absolute;
             top: 5px;
             left: 6px;
             font-size: 0.62rem;
             letter-spacing: 0.5px;
-            background: rgba(0, 0, 0, 0.72);
+            background: rgba(0, 0, 0, 0.85);
             color: var(--gold);
             padding: 1px 5px;
             border-radius: 4px;
@@ -365,6 +374,11 @@
             text-shadow: none !important;
         }
 
+        .card.master-view.neutral.master-picked-preview {
+            color: #f1f2f6 !important;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9) !important;
+        }
+
         .card.blue .word,
         .card.red .word,
         .card.assassin .word {
@@ -375,6 +389,11 @@
         .card.neutral .word {
             color: #222 !important;
             text-shadow: none !important;
+        }
+
+        .card.master-view.neutral.master-picked-preview .word {
+            color: #ffffff !important;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.95) !important;
         }
 
         h2 {
@@ -2323,16 +2342,33 @@
         state.redCardsRemaining = redLeft;
     }
 
+    function sanitizeSelectedCards(rawMap, cards = []) {
+        const cleaned = {};
+        if (!rawMap || typeof rawMap !== 'object') return cleaned;
+        const cardMap = new Map((Array.isArray(cards) ? cards : []).map(c => [String(c.id), c]));
+
+        for (const [k, list] of Object.entries(rawMap)) {
+            if (!Array.isArray(list)) continue;
+            const card = cardMap.get(String(k));
+            if (!card || card.revealed) continue;
+            const uniqueIds = Array.from(new Set(list.filter(Boolean)));
+            if (uniqueIds.length > 0) {
+                cleaned[k] = uniqueIds;
+            }
+        }
+        return cleaned;
+    }
+
     function applyIncomingGameState(rawState, roomStatus = currentRoom?.status) {
+        const cards = Array.isArray(rawState?.cards) ? rawState.cards : gameState.cards;
         const merged = {
             ...gameState,
             ...(rawState || {}),
+            cards,
             hintGivenOnTurn: Boolean(rawState?.hintGivenOnTurn ?? rawState?.currentHint),
             teamsLocked: Boolean(rawState?.teamsLocked),
             skipVotes: Array.isArray(rawState?.skipVotes) ? rawState.skipVotes : [],
-            selectedCards: (rawState?.selectedCards && typeof rawState.selectedCards === 'object')
-                ? rawState.selectedCards
-                : {}
+            selectedCards: sanitizeSelectedCards(rawState?.selectedCards, cards)
         };
         recalculateCardCounters(merged);
         if (roomStatus === 'paused' && !merged.gameOver) {
@@ -2354,6 +2390,14 @@
             merged.timeLeft = 0;
         }
         gameState = merged;
+
+        if (localSelectedCardId !== null && currentUser) {
+            const card = gameState.cards.find(c => c.id === localSelectedCardId);
+            const voters = gameState.selectedCards?.[localSelectedCardId];
+            if (!card || card.revealed || gameState.cardsBlocked || !Array.isArray(voters) || !voters.includes(currentUser.id)) {
+                localSelectedCardId = null;
+            }
+        }
     }
 
     async function getValidUser() {
@@ -2577,12 +2621,15 @@
                     const latest = metas[metas.length - 1];
                     if (latest && latest.selectedCardId !== null && latest.selectedCardId !== undefined) {
                         const cid = latest.selectedCardId;
-                        if (!map[cid]) map[cid] = [];
-                        map[cid].push({
-                            userId,
-                            username: latest.username || 'Игрок',
-                            color: latest.color || getPlayerDotColor(userId)
-                        });
+                        const card = gameState.cards?.find(c => c.id === cid);
+                        if (card && !card.revealed && !gameState.cardsBlocked && !gameState.gameOver) {
+                            if (!map[cid]) map[cid] = [];
+                            map[cid].push({
+                                userId,
+                                username: latest.username || 'Игрок',
+                                color: latest.color || getPlayerDotColor(userId)
+                            });
+                        }
                     }
                 });
                 peerSelectedCards = map;
@@ -2604,11 +2651,8 @@
                 currentRoom = updatedRoom;
                 applyIncomingGameState(updatedRoom.game_state, updatedRoom.status);
 
-                if (localSelectedCardId !== null) {
-                    const voters = gameState.selectedCards?.[localSelectedCardId];
-                    if (!Array.isArray(voters) || !voters.includes(currentUser.id)) {
-                        localSelectedCardId = null;
-                    }
+                if (localSelectedCardId === null) {
+                    trackMySelectedCard(null);
                 }
 
                 if (prevStatus === 'lobby' && updatedRoom.status === 'playing') {
@@ -2663,16 +2707,14 @@
             });
     }
 
-    async function trackMySelectedCard(cardId) {
+    function trackMySelectedCard(cardId) {
         localSelectedCardId = cardId;
         if (!roomChannel || !currentUser) return;
-        try {
-            await roomChannel.track({
-                username: currentProfile?.username || 'Агент',
-                color: getPlayerDotColor(currentUser.id),
-                selectedCardId: cardId
-            });
-        } catch (_) {}
+        roomChannel.track({
+            username: currentProfile?.username || 'Агент',
+            color: getPlayerDotColor(currentUser.id),
+            selectedCardId: cardId
+        }).catch(() => {});
     }
 
     async function pushGameState() {
@@ -2794,6 +2836,7 @@
         gameState.currentHint = null;
         gameState.skipVotes = [];
         gameState.selectedCards = {};
+        localSelectedCardId = null;
 
         await sb
             .from('rooms')
@@ -2817,7 +2860,7 @@
     async function leaveRoomCompletely(removePlayerRow = true) {
         isCommittingCard = false;
         clearPickConfirmTimer();
-        await trackMySelectedCard(null);
+        trackMySelectedCard(null);
         sessionStorage.removeItem(ACTIVE_ROOM_STORAGE_KEY);
         const roomCode = currentRoom?.code;
         if (removePlayerRow && roomCode && currentUser) {
@@ -3190,6 +3233,8 @@
         const prevMap = gameState.selectedCards || {};
         for (const [k, list] of Object.entries(prevMap)) {
             if (!Array.isArray(list)) continue;
+            const cItem = gameState.cards.find(c => String(c.id) === String(k));
+            if (!cItem || cItem.revealed) continue;
             const filtered = list.filter(uid => uid !== currentUser.id);
             if (filtered.length > 0) {
                 map[k] = filtered;
@@ -3200,9 +3245,8 @@
             Array.isArray(prevMap[cardId]) && prevMap[cardId].includes(currentUser.id);
 
         if (wasAlreadyPickedOnThisCard) {
-            if (localSelectedCardId === cardId) {
-                await trackMySelectedCard(null);
-            }
+            localSelectedCardId = null;
+            trackMySelectedCard(null);
             if (activeConfirmCardId === cardId) {
                 clearPickConfirmTimer();
             }
@@ -3210,7 +3254,8 @@
             const targetList = Array.isArray(map[cardId]) ? [...map[cardId]] : [];
             targetList.push(currentUser.id);
             map[cardId] = targetList;
-            await trackMySelectedCard(cardId);
+            localSelectedCardId = cardId;
+            trackMySelectedCard(cardId);
             if (activeConfirmCardId !== null && activeConfirmCardId !== cardId) {
                 clearPickConfirmTimer();
             }
@@ -3249,7 +3294,7 @@
         const fragment = document.createDocumentFragment();
 
         gameState.cards.forEach(card => {
-            const voters = Array.isArray(selectedMap[card.id]) ? selectedMap[card.id] : [];
+            const voters = !card.revealed && Array.isArray(selectedMap[card.id]) ? selectedMap[card.id] : [];
             const hasAnyPick = !card.revealed && voters.length > 0;
             const allAgentsPicked =
                 hasAnyPick &&
@@ -3403,6 +3448,7 @@
         gameState.cardsBlocked = false;
         gameState.skipVotes = [];
         gameState.selectedCards = {};
+        localSelectedCardId = null;
         Object.assign(gameState, createTimerFields(TURN_SECONDS, true));
         gameState.hintsHistory.push({
             word,
@@ -3415,8 +3461,8 @@
         document.getElementById('hint-number').value = '';
 
         clearPickConfirmTimer();
-        await trackMySelectedCard(null);
-        updateMyRoleControls();
+        trackMySelectedCard(null);
+        syncAllUI();
         await pushGameState();
     }
 
@@ -3435,14 +3481,9 @@
         if (!card || card.revealed) return;
 
         card.revealed = true;
-
-        const nextSelected = { ...(gameState.selectedCards || {}) };
-        delete nextSelected[cardId];
-        gameState.selectedCards = nextSelected;
-
-        if (localSelectedCardId === cardId) {
-            await trackMySelectedCard(null);
-        }
+        gameState.selectedCards = {};
+        localSelectedCardId = null;
+        trackMySelectedCard(null);
 
         recalculateCardCounters(gameState);
 
@@ -3478,11 +3519,13 @@
             switchTurnState();
         }
 
+        syncAllUI();
         await pushGameState();
     }
 
     function switchTurnState() {
         clearPickConfirmTimer();
+        localSelectedCardId = null;
         trackMySelectedCard(null);
         gameState.currentTeam = gameState.currentTeam === 'blue' ? 'red' : 'blue';
         gameState.cardsBlocked = true;
@@ -3495,7 +3538,8 @@
 
     async function finishMatch(winningTeam) {
         clearPickConfirmTimer();
-        await trackMySelectedCard(null);
+        localSelectedCardId = null;
+        trackMySelectedCard(null);
         recalculateCardCounters(gameState);
         gameState.gameOver = true;
         gameState.winner = winningTeam;
@@ -3512,6 +3556,7 @@
             await recordMatchAndElo(winningTeam);
         }
 
+        syncAllUI();
         await pushGameState();
         showWinnerCelebration(winningTeam);
     }
@@ -3593,10 +3638,12 @@
     async function startNextRound() {
         isCommittingCard = false;
         clearPickConfirmTimer();
-        await trackMySelectedCard(null);
+        localSelectedCardId = null;
+        trackMySelectedCard(null);
         const nextNum = (gameState.gameNumber || 1) + 1;
         gameState = buildInitialGameState(nextNum, gameState.teamsLocked);
 
+        syncAllUI();
         await sb
             .from('rooms')
             .update({ status: 'playing', game_state: gameState })
